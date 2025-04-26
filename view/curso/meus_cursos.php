@@ -46,6 +46,11 @@ include __DIR__ . '/../includes/header.php';
                                 <div class="card-body">
                                     <p><strong>Período:</strong> <?= date('d/m/Y', strtotime($curso['data_inicio'])) ?> a <?= date('d/m/Y', strtotime($curso['data_termino'])) ?></p>
                                     <p><strong>Professor:</strong> <?= htmlspecialchars($curso['professor_nome'] ?? 'Não informado') ?></p>
+                                    
+                                    <?php if ($_SESSION['usuario_nivel'] === 'Aluno'): ?>
+                                        <p><strong>Turma:</strong> <?= htmlspecialchars($curso['turma_numero'] ?? 'Não informada') ?></p>
+                                    <?php endif; ?>
+                                    
                                     <p><strong>Empresa:</strong> <?= htmlspecialchars($curso['empresa']) ?></p>
                                 </div>
                             </div>

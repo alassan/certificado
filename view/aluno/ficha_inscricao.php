@@ -9,12 +9,39 @@ unset($_SESSION['mensagem_erro']);
 unset($_SESSION['mensagem_sucesso']);
 
 $nomeUsuarioLogado  = $_SESSION['usuario_nome'] ?? '';
-$emailUsuarioLogado = $_SESSION['usuario_email'] ?? '';
+$cpfUsuarioLogado   = $_SESSION['usuario_cpf'] ?? '';
 $usuario_id         = $_SESSION['usuario_id'] ?? null;
 
 if (!$usuario_id) {
     header('Location: ../../login/login.php');
     exit;
+}
+
+// Busca os dados da última inscrição do aluno
+$dadosAluno = [];
+$enderecoAluno = [];
+$stmt = $conn->prepare("SELECT f.*, e.* FROM fichas_inscricao f
+    JOIN enderecos e ON e.id = f.endereco_id
+    WHERE f.usuario_id = ? ORDER BY f.data_inscricao DESC LIMIT 1");
+$stmt->execute([$usuario_id]);
+$ultimaInscricao = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if ($ultimaInscricao) {
+    $dadosAluno = [
+        'email' => $ultimaInscricao['email_aluno'] ?? '',
+        'data_nascimento' => $ultimaInscricao['data_nascimento'] ?? '',
+        'contato' => $ultimaInscricao['contato'] ?? '',
+        'pmt_funcionario' => $ultimaInscricao['pmt_funcionario'] ?? false
+    ];
+    
+    $enderecoAluno = [
+        'cep' => $ultimaInscricao['cep'] ?? '',
+        'logradouro' => $ultimaInscricao['logradouro'] ?? '',
+        'bairro' => $ultimaInscricao['bairro'] ?? '',
+        'cidade' => $ultimaInscricao['cidade'] ?? '',
+        'uf' => $ultimaInscricao['uf'] ?? '',
+        'numero' => $ultimaInscricao['numero'] ?? ''
+    ];
 }
 
 $hoje = date('Y-m-d');
@@ -76,6 +103,10 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       font-size: 0.85rem;
       color: #6c757d;
     }
+    .form-check-input:checked {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
   </style>
 </head>
 <body>
@@ -117,19 +148,19 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">E-mail</label>
-          <input type="email" class="form-control" name="email_aluno" value="<?= htmlspecialchars($emailUsuarioLogado) ?>" readonly>
+          <input type="email" class="form-control" name="email_aluno" value="<?= htmlspecialchars($dadosAluno['email'] ?? '') ?>">
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">CPF <span class="text-danger">*</span></label>
-          <input type="text" class="form-control cpf" name="cpf" required maxlength="14">
+          <input type="text" class="form-control cpf" name="cpf" value="<?= htmlspecialchars($cpfUsuarioLogado) ?>" readonly required maxlength="14">
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Data de Nascimento <span class="text-danger">*</span></label>
-          <input type="date" class="form-control" name="data_nascimento" required max="<?= date('Y-m-d') ?>">
+          <input type="date" class="form-control" name="data_nascimento" value="<?= htmlspecialchars($dadosAluno['data_nascimento'] ?? '') ?>" required max="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Contato <span class="text-danger">*</span></label>
-          <input type="text" class="form-control telefone" name="contato" required>
+          <input type="text" class="form-control telefone" name="contato" value="<?= htmlspecialchars($dadosAluno['contato'] ?? '') ?>" required>
         </div>
         <div class="col-md-12 mb-3">
           <label class="form-label">Curso <span class="text-danger">*</span></label>
@@ -154,32 +185,32 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="row">
         <div class="col-md-4 mb-3">
           <label class="form-label">CEP <span class="text-danger">*</span></label>
-          <input type="text" id="cep" name="cep" class="form-control cep" required>
+          <input type="text" id="cep" name="cep" class="form-control cep" value="<?= htmlspecialchars($enderecoAluno['cep'] ?? '') ?>" required>
         </div>
         <div class="col-md-8 mb-3">
           <label class="form-label">Logradouro <span class="text-danger">*</span></label>
-          <input type="text" id="logradouro" name="logradouro" class="form-control" readonly required>
+          <input type="text" id="logradouro" name="logradouro" class="form-control" value="<?= htmlspecialchars($enderecoAluno['logradouro'] ?? '') ?>" readonly required>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Bairro <span class="text-danger">*</span></label>
-          <input type="text" id="bairro" name="bairro" class="form-control" readonly required>
+          <input type="text" id="bairro" name="bairro" class="form-control" value="<?= htmlspecialchars($enderecoAluno['bairro'] ?? '') ?>" readonly required>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Cidade <span class="text-danger">*</span></label>
-          <input type="text" id="cidade" name="cidade" class="form-control" readonly required>
+          <input type="text" id="cidade" name="cidade" class="form-control" value="<?= htmlspecialchars($enderecoAluno['cidade'] ?? '') ?>" readonly required>
         </div>
         <div class="col-md-2 mb-3">
           <label class="form-label">UF <span class="text-danger">*</span></label>
-          <input type="text" id="uf" name="uf" class="form-control" readonly required>
+          <input type="text" id="uf" name="uf" class="form-control" value="<?= htmlspecialchars($enderecoAluno['uf'] ?? '') ?>" readonly required>
         </div>
         <div class="col-md-2 mb-3">
           <label class="form-label">Número <span class="text-danger">*</span></label>
-          <input type="text" name="numero" class="form-control" required>
+          <input type="text" name="numero" class="form-control" value="<?= htmlspecialchars($enderecoAluno['numero'] ?? '') ?>" required>
         </div>
       </div>
 
       <div class="form-check mb-3">
-        <input type="checkbox" name="pmt_funcionario" class="form-check-input" id="pmt_funcionario">
+        <input type="checkbox" name="pmt_funcionario" class="form-check-input" id="pmt_funcionario" <?= ($dadosAluno['pmt_funcionario'] ?? false) ? 'checked' : '' ?>>
         <label class="form-check-label" for="pmt_funcionario">É funcionário da PMT?</label>
       </div>
 
@@ -211,50 +242,61 @@ $(document).ready(function(){
     $('.cpf').mask('000.000.000-00', {reverse: true});
     $('.cep').mask('00000-000');
     $('.telefone').mask('(00) 00000-0000');
+    
+    // Se já tiver CEP preenchido, busca o endereço
+    const cepValue = $('#cep').val().replace(/\D/g, '');
+    if (cepValue.length === 8) {
+        buscarEndereco(cepValue);
+    }
 });
 
-// Busca CEP via API
-document.getElementById('cep').addEventListener('blur', function() {
-    let cep = this.value.replace(/\D/g, '');
-    if (cep.length === 8) {
-        fetch(`https://viacep.com.br/ws/${cep}/json/`)
-            .then(response => response.json())
-            .then(data => {
-                if (!data.erro) {
-                    document.getElementById('logradouro').value = data.logradouro;
-                    document.getElementById('bairro').value = data.bairro;
-                    document.getElementById('cidade').value = data.localidade;
-                    document.getElementById('uf').value = data.uf;
-                } else {
-                    alert("CEP não encontrado.");
-                    // Libera os campos para edição manual
-                    document.getElementById('logradouro').readOnly = false;
-                    document.getElementById('bairro').readOnly = false;
-                    document.getElementById('cidade').readOnly = false;
-                    document.getElementById('uf').readOnly = false;
-                }
-            })
-            .catch(error => {
-                console.error("Erro ao buscar CEP:", error);
-                alert("Erro ao buscar CEP. Preencha os campos manualmente.");
+// Função para buscar endereço
+function buscarEndereco(cep) {
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.erro) {
+                $('#logradouro').val(data.logradouro);
+                $('#bairro').val(data.bairro);
+                $('#cidade').val(data.localidade);
+                $('#uf').val(data.uf);
+            } else {
+                alert("CEP não encontrado.");
                 // Libera os campos para edição manual
-                document.getElementById('logradouro').readOnly = false;
-                document.getElementById('bairro').readOnly = false;
-                document.getElementById('cidade').readOnly = false;
-                document.getElementById('uf').readOnly = false;
-            });
+                $('#logradouro').prop('readonly', false);
+                $('#bairro').prop('readonly', false);
+                $('#cidade').prop('readonly', false);
+                $('#uf').prop('readonly', false);
+            }
+        })
+        .catch(error => {
+            console.error("Erro ao buscar CEP:", error);
+            alert("Erro ao buscar CEP. Preencha os campos manualmente.");
+            // Libera os campos para edição manual
+            $('#logradouro').prop('readonly', false);
+            $('#bairro').prop('readonly', false);
+            $('#cidade').prop('readonly', false);
+            $('#uf').prop('readonly', false);
+        });
+}
+
+// Busca CEP via API quando perde o foco
+$('#cep').on('blur', function() {
+    let cep = $(this).val().replace(/\D/g, '');
+    if (cep.length === 8) {
+        buscarEndereco(cep);
     }
 });
 
 // Validação do formulário
 function validarFormulario() {
-    const cpf = document.querySelector('input[name="cpf"]').value.replace(/\D/g, '');
+    const cpf = $('input[name="cpf"]').val().replace(/\D/g, '');
     if (cpf.length !== 11) {
         alert('CPF inválido. Digite os 11 números.');
         return false;
     }
 
-    const dataNascimento = new Date(document.querySelector('input[name="data_nascimento"]').value);
+    const dataNascimento = new Date($('input[name="data_nascimento"]').val());
     const hoje = new Date();
     if (dataNascimento >= hoje) {
         alert('Data de nascimento inválida. Deve ser anterior à data atual.');

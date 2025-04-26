@@ -1,0 +1,36 @@
+
+# Arquivos de configuração locais
+.env
+*.env
+*.ini
+*.bak
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.cache
+
+# Pastas ocultas e do sistema
+.DS_Store
+Thumbs.db
+
+# Pastas de IDEs/editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Arquivos de backup
+*.~*
+*.swp
+
+# Arquivos de exportação ou banco
+*.sql
+*.sqlite
+
+# Arquivos compactados
+*.zip
+*.rar
+*.tar
+*.gz
+*.7z

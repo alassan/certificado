@@ -38,7 +38,7 @@ if ($nivel === 'Aluno') {
 <!-- Sidebar -->
 <div class="sidebar">
     <div class="sidebar-header text-center mb-4">
-        <img src="/assets/images/logo-fundacao-wall-ferraz.png" alt="Fundação Wall Ferraz" class="img-fluid mb-2" style="max-height: 60px;">
+        <img src="certificado/assets/images/logo_fwf.png" alt="Fundação Wall Ferraz" class="img-fluid mb-2" style="max-height: 60px;">
         <h6 class="mb-0 text-muted">Prefeitura Municipal de Teresina/PI</h6>
     </div>
     
@@ -117,6 +117,46 @@ if ($nivel === 'Aluno') {
             </div>
         </li>
         <?php endif; ?>
+		<!-- Add this new menu item after the Professors section -->
+<?php if ($nivel !== 'Aluno'): ?>
+<!-- Turmas -->
+<li class="nav-item">
+    <a class="nav-link <?= str_contains($uri, 'turma/') ? '' : 'collapsed' ?>" 
+       data-bs-toggle="collapse" href="#menuTurmas" role="button" 
+       aria-expanded="<?= str_contains($uri, 'turma/') ? 'true' : 'false' ?>">
+        <i class="bi bi-people-fill"></i> Turmas
+    </a>
+    <div class="collapse submenu <?= str_contains($uri, 'turma/') ? 'show' : '' ?>" id="menuTurmas">
+        <a href="../turmas/cadastrar.php" 
+           class="nav-link <?= $paginaAtual === 'cadastrar.php' ? 'active' : '' ?>">
+            <i class="bi bi-plus-circle"></i> Cadastrar
+        </a>
+        <a href="../turmas/listar.php" 
+           class="nav-link <?= $paginaAtual === 'listar.php' ? 'active' : '' ?>">
+            <i class="bi bi-card-list"></i> Listar
+        </a>
+    </div>
+</li>
+
+<!-- Empresas -->
+<li class="nav-item">
+    <a class="nav-link <?= str_contains($uri, 'empresa/') ? '' : 'collapsed' ?>" 
+       data-bs-toggle="collapse" href="#menuEmpresas" role="button" 
+       aria-expanded="<?= str_contains($uri, 'empresa/') ? 'true' : 'false' ?>">
+        <i class="bi bi-building"></i> Empresas
+    </a>
+    <div class="collapse submenu <?= str_contains($uri, 'empresa/') ? 'show' : '' ?>" id="menuEmpresas">
+        <a href="../empresas/cadastrar.php" 
+           class="nav-link <?= $paginaAtual === 'cadastrar.php' ? 'active' : '' ?>">
+            <i class="bi bi-plus-circle"></i> Cadastrar
+        </a>
+        <a href="../empresas/listar.php" 
+           class="nav-link <?= $paginaAtual === 'listar.php' ? 'active' : '' ?>">
+            <i class="bi bi-card-list"></i> Listar
+        </a>
+    </div>
+</li>
+<?php endif; ?>
 
         <?php if ($nivel === 'Aluno'): ?>
         <!-- Meus Cursos -->

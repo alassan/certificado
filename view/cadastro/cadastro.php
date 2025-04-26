@@ -1,26 +1,43 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require_once __DIR__ . '/../../conexao.php';
 session_start();
 
+$erro = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar'])) {
     $nome = $_POST['nome'] ?? '';
-    $email = $_POST['email'] ?? '';
+    $cpf = preg_replace('/[^0-9]/', '', $_POST['cpf'] ?? '');
     $senha = $_POST['senha'] ?? '';
     $confirmar = $_POST['confirmar'] ?? '';
 
-    if ($senha !== $confirmar) {
+    function validarCPF($cpf) {
+        if (strlen($cpf) != 11 || preg_match('/(\d)\1{10}/', $cpf)) return false;
+        for ($t = 9; $t < 11; $t++) {
+            $d = 0;
+            for ($c = 0; $c < $t; $c++) $d += $cpf[$c] * (($t + 1) - $c);
+            $d = ((10 * $d) % 11) % 10;
+            if ($cpf[$c] != $d) return false;
+        }
+        return true;
+    }
+
+    if (!validarCPF($cpf)) {
+        $erro = "CPF inválido.";
+    } elseif ($senha !== $confirmar) {
         $erro = "As senhas não coincidem.";
     } else {
-        $verificar = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $verificar->execute([$email]);
+        $verificar = $conn->prepare("SELECT id FROM usuarios WHERE cpf = ?");
+        $verificar->execute([$cpf]);
         if ($verificar->rowCount() > 0) {
-            $erro = "E-mail já cadastrado.";
+            $erro = "CPF já cadastrado.";
         } else {
             $hash = password_hash($senha, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
-            $stmt->execute([$nome, $email, $hash]);
-
-            // Redirecionamento corrigido para o caminho completo
+            $stmt = $conn->prepare("INSERT INTO usuarios (nome, cpf, senha) VALUES (?, ?, ?)");
+            $stmt->execute([$nome, $cpf, $hash]);
             header("Location: http://localhost/certificado/view/login/login.php");
             exit;
         }
@@ -32,93 +49,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar'])) {
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Cadastro</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background-color: #f1f5f9;
-      font-family: 'Segoe UI', sans-serif;
-    }
-    .register-box {
-      max-width: 800px;
-      margin: 50px auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 20px rgba(0,0,0,0.05);
-    }
-    .btn-green {
-      background-color: #198754;
-      color: #fff;
-    }
-    .btn-green:hover {
-      background-color: #157347;
-    }
-    .toggle-password {
-      cursor: pointer;
-      position: absolute;
-      right: 15px;
-      top: 38px;
-      color: #888;
-    }
-    .position-relative {
-      position: relative;
-    }
-  </style>
+  <title>Cadastro - Sistema de Certificados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen px-4">
+  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-[#003c8f] mb-6">📝 Cadastro de Usuário</h2>
 
-<div class="register-box">
-  <h3 class="text-center mb-4">📝 Criar Conta</h3>
+    <form method="POST" class="space-y-4" autocomplete="off">
+      <input type="hidden" name="registrar" value="1">
+
+      <div>
+        <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+        <input type="text" name="nome" id="nome" required
+               class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#003c8f]">
+      </div>
+
+      <div>
+        <label for="cpf" class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+        <input type="text" name="cpf" id="cpf" required
+               class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#003c8f]">
+      </div>
+
+      <div>
+        <label for="senha" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+        <input type="password" name="senha" id="senha" required
+               class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#003c8f]">
+      </div>
+
+      <div>
+        <label for="confirmar" class="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+        <input type="password" name="confirmar" id="confirmar" required
+               class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#003c8f]">
+      </div>
+
+      <button type="submit"
+              class="w-full bg-[#003c8f] hover:bg-[#002c6f] text-white font-semibold py-2 px-4 rounded transition">
+        Cadastrar
+      </button>
+    </form>
+
+    <div class="text-center mt-4 text-sm text-gray-600">
+      Já tem conta? <a href="../login/login.php" class="text-[#003c8f] hover:underline font-medium">Entrar</a>
+    </div>
+  </div>
 
   <?php if (!empty($erro)): ?>
-    <div class="alert alert-danger text-center"><?= htmlspecialchars($erro) ?></div>
+    <script>
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro no Cadastro',
+        text: '<?= addslashes($erro) ?>',
+        confirmButtonColor: '#003c8f',
+        confirmButtonText: 'OK'
+      });
+    </script>
   <?php endif; ?>
 
-  <form method="POST">
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <label for="nome" class="form-label">Nome completo</label>
-        <input type="text" name="nome" id="nome" class="form-control" placeholder="Seu nome" required>
-      </div>
-      <div class="col-md-6 mb-3">
-        <label for="email" class="form-label">E-mail</label>
-        <input type="email" name="email" id="email" class="form-control" placeholder="seu@email.com" required>
-      </div>
-      <div class="col-md-6 mb-3 position-relative">
-        <label for="senha" class="form-label">Senha</label>
-        <input type="password" name="senha" id="senha" class="form-control" placeholder="Senha" required>
-        <span class="toggle-password" onclick="togglePassword('senha', this)">👁️</span>
-      </div>
-      <div class="col-md-6 mb-3 position-relative">
-        <label for="confirmar" class="form-label">Confirmar Senha</label>
-        <input type="password" name="confirmar" id="confirmar" class="form-control" placeholder="Confirme a senha" required>
-        <span class="toggle-password" onclick="togglePassword('confirmar', this)">👁️</span>
-      </div>
-    </div>
-    <button type="submit" name="registrar" class="btn btn-green w-100">Cadastrar</button>
-  </form>
-
-  <p class="text-center mt-3">
-    Já tem conta? <a href="http://localhost/certificado/view/login/login.php" class="text-decoration-none">Entrar</a>
-  </p>
-  <p class="text-center">
-    <a href="../index.php" class="text-muted small">← Voltar para página inicial</a>
-  </p>
-</div>
-
-<script>
-function togglePassword(fieldId, el) {
-  const field = document.getElementById(fieldId);
-  if (field.type === "password") {
-    field.type = "text";
-    el.textContent = "🙈";
-  } else {
-    field.type = "password";
-    el.textContent = "👁️";
-  }
-}
-</script>
-
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const cpfInput = document.getElementById("cpf");
+    if (cpfInput) {
+      cpfInput.addEventListener("input", function (e) {
+        let value = e.target.value.replace(/\D/g, "");
+        if (value.length > 11) value = value.slice(0, 11);
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        e.target.value = value;
+      });
+    }
+  });
+  </script>
 </body>
 </html>
