@@ -13,26 +13,23 @@ if (!isset($_SESSION['usuario_nivel']) || !in_array($_SESSION['usuario_nivel'], 
 // Define o caminho base
 $base_path = '/certificado';
 
-// Inclui arquivos necessários com caminho absoluto
+// Inclui arquivos necessários
 require_once $_SERVER['DOCUMENT_ROOT'] . '/certificado/models/conexao.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/certificado/models/Curso.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/certificado/models/Professor.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/certificado/models/CursoDisponivel.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/certificado/models/Empresa.php';
 
-// CORREÇÃO DA LINHA 23 - Obtém a conexão corretamente
-$conn = Conexao::getConnection(); // Alterado de getInstance() para getConnection()
+// Obtém a conexão
+$conn = Conexao::getConnection();
 
 // Instancia modelos
 $cursoModel = new Curso($conn);
-$professorModel = new Professor($conn);
 $cursoDisponivelModel = new CursoDisponivel($conn);
+$empresaModel = new Empresa($conn);
 
 // Obtém dados para os selects
 $cursos = $cursoModel->listarTodos();
-$professores = $professorModel->listarTodos();
-
-// Restante do código permanece igual...
-
+$empresas = $empresaModel->listar();
 
 // Inclui o cabeçalho
 include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
@@ -48,7 +45,7 @@ include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
 
     <div class="card shadow">
         <div class="card-body">
-            <!-- Mensagens de feedback -->
+
             <?php if (isset($_GET['erro'])): ?>
                 <div class="alert alert-danger alert-dismissible fade show">
                     <?= htmlspecialchars($_GET['erro']) ?>
@@ -61,10 +58,9 @@ include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
                 </div>
             <?php endif; ?>
 
-            <!-- Formulário -->
             <form id="form-curso-disponivel" action="<?= $base_path ?>/controllers/CursoDisponivelController.php?acao=salvar" method="POST">
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="curso_id" class="form-label">Curso *</label>
                         <select id="curso_id" name="curso_id" class="form-select" required>
                             <option value="">Selecione um curso</option>
@@ -73,12 +69,15 @@ include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label for="professor_id" class="form-label">Professor</label>
-                        <select id="professor_id" name="professor_id" class="form-select">
-                            <option value="">Selecione um professor (opcional)</option>
-                            <?php foreach ($professores as $prof): ?>
-                                <option value="<?= $prof['id'] ?>"><?= htmlspecialchars($prof['nome']) ?></option>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="empresa_id" class="form-label">Empresa Parceira *</label>
+                        <select id="empresa_id" name="empresa_id" class="form-select" required>
+                            <option value="">Selecione uma empresa</option>
+                            <?php foreach ($empresas as $empresa): ?>
+                                <option value="<?= $empresa['id'] ?>"><?= htmlspecialchars($empresa['nome']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -106,11 +105,6 @@ include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label for="empresa" class="form-label">Empresa Parceira *</label>
-                    <input type="text" id="empresa" name="empresa" class="form-control" placeholder="Nome da empresa responsável" required>
-                </div>
-
                 <div class="d-flex justify-content-between align-items-center border-top pt-3">
                     <button type="reset" class="btn btn-outline-secondary px-4">
                         <i class="fas fa-times me-1"></i> Limpar
@@ -129,29 +123,14 @@ include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
     document.addEventListener('DOMContentLoaded', function() {
         const hoje = new Date();
         const hojeISO = hoje.toISOString().split('T')[0];
-        
-        // Configura os valores mínimos para os campos de data
+
         document.getElementById('inicio_inscricao').min = hojeISO;
         document.getElementById('termino_inscricao').min = hojeISO;
         document.getElementById('data_inicio').min = hojeISO;
         document.getElementById('data_termino').min = hojeISO;
-
-        // Formatação automática para campos de data
-        const dateInputs = document.querySelectorAll('input[type="date"]');
-        dateInputs.forEach(input => {
-            input.addEventListener('change', function() {
-                if (this.value) {
-                    const parts = this.value.split('-');
-                    this.value = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-                }
-            });
-        });
     });
 
     document.getElementById('form-curso-disponivel').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Obtém os valores das datas
         const inicioInscricao = new Date(document.getElementById('inicio_inscricao').value);
         const terminoInscricao = new Date(document.getElementById('termino_inscricao').value);
         const dataInicio = new Date(document.getElementById('data_inicio').value);
@@ -159,49 +138,49 @@ include $_SERVER['DOCUMENT_ROOT'] . '/certificado/view/includes/header.php';
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
 
-        // Validações
         if (inicioInscricao > terminoInscricao) {
+            e.preventDefault();
             Swal.fire({
                 icon: 'error',
                 title: 'Datas inválidas',
-                text: 'O término das inscrições deve ser após a data de início.',
+                text: 'O término das inscrições deve ser após o início.',
                 confirmButtonColor: '#0d6efd'
             });
-            return false;
+            return;
         }
 
         if (dataInicio > dataTermino) {
+            e.preventDefault();
             Swal.fire({
                 icon: 'error',
                 title: 'Datas inválidas',
                 text: 'O término do curso deve ser após a data de início.',
                 confirmButtonColor: '#0d6efd'
             });
-            return false;
+            return;
         }
 
         if (terminoInscricao > dataInicio) {
+            e.preventDefault();
             Swal.fire({
                 icon: 'error',
                 title: 'Datas inválidas',
-                text: 'O curso deve começar após o término do período de inscrições.',
+                text: 'O curso deve iniciar após o término das inscrições.',
                 confirmButtonColor: '#0d6efd'
             });
-            return false;
+            return;
         }
 
         if (inicioInscricao < hoje) {
+            e.preventDefault();
             Swal.fire({
                 icon: 'warning',
-                title: 'Data passada',
-                text: 'A data de início das inscrições não pode ser anterior ao dia atual.',
+                title: 'Data inválida',
+                text: 'A inscrição não pode começar no passado.',
                 confirmButtonColor: '#0d6efd'
             });
-            return false;
+            return;
         }
-
-        // Se todas as validações passarem, envia o formulário
-        this.submit();
     });
 </script>
 

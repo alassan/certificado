@@ -24,7 +24,7 @@ if (!isset($cursos)) {
         <div class="card-header bg-primary text-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">
-                    <i class="fas fa-calendar-alt me-2"></i>Cursos Disponíveis
+                    <i class="fas fa-calendar-alt me-2"></i> Cursos Disponíveis
                 </h4>
                 <a href="/certificado/view/admin/cursos_disponiveis/cadastrar.php" class="btn btn-light btn-sm">
                     <i class="fas fa-plus me-1"></i> Novo Curso
@@ -54,9 +54,6 @@ if (!isset($cursos)) {
                             <tr>
                                 <td>
                                     <strong><?= htmlspecialchars($curso['curso_nome']) ?></strong>
-                                    <?php if (!empty($curso['professor_nome'])): ?>
-                                        <p class="text-muted small mb-0">Professor: <?= htmlspecialchars($curso['professor_nome']) ?></p>
-                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?= date('d/m/Y', strtotime($curso['data_inicio'])) ?> a 
@@ -66,7 +63,7 @@ if (!isset($cursos)) {
                                     <?= date('d/m/Y', strtotime($curso['inicio_inscricao'])) ?> a 
                                     <?= date('d/m/Y', strtotime($curso['termino_inscricao'])) ?>
                                 </td>
-                                <td><?= htmlspecialchars($curso['empresa']) ?></td>
+                                <td><?= htmlspecialchars($curso['empresa_nome'] ?? 'Não informado') ?></td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
                                         <a href="/certificado/view/admin/cursos_disponiveis/editar.php?id=<?= $curso['id'] ?>" 
@@ -111,7 +108,6 @@ if (!isset($cursos)) {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializa DataTable
     $('#tabela-cursos-disponiveis').DataTable({
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
@@ -125,7 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Ativa tooltips do Bootstrap
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);

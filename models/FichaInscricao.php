@@ -102,4 +102,20 @@ class FichaInscricao
     $stmt->execute([$cursoDisponivelId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
    }
+   
+   public function buscarFichasMatriculadasPorCursoDisponivel($cursoDisponivelId)
+{
+    $stmt = $this->conn->prepare("SELECT * FROM fichas_inscricao WHERE curso_disponivel_id = ? AND status = 'Matriculado'");
+    $stmt->execute([$cursoDisponivelId]);
+    return $stmt->fetchAll();
+}
+
+public function buscarFichasListaEsperaPorCursoDisponivel($cursoDisponivelId)
+{
+    $stmt = $this->conn->prepare("SELECT * FROM fichas_inscricao WHERE curso_disponivel_id = ? AND status = 'Lista de Espera'");
+    $stmt->execute([$cursoDisponivelId]);
+    return $stmt->fetchAll();
+}
+
+   
 }

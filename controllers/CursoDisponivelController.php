@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../models/CursoDisponivel.php';
 require_once __DIR__ . '/../models/Curso.php';
-require_once __DIR__ . '/../models/Professor.php';
+require_once __DIR__ . '/../models/Empresa.php';
 require_once __DIR__ . '/../conexao.php';
 session_start();
 
@@ -15,20 +15,19 @@ $acao = $_GET['acao'] ?? '';
 
 $cursoDisponivelModel = new CursoDisponivel($conn);
 $cursoModel = new Curso($conn);
-$professorModel = new Professor($conn);
+$empresaModel = new Empresa($conn);
 
 switch ($acao) {
     case 'salvar':
         $curso_id = $_POST['curso_id'] ?? null;
-        $professor_id = $_POST['professor_id'] ?? null;
-        $empresa = trim($_POST['empresa'] ?? '');
+        $empresa_id = $_POST['empresa_id'] ?? null;
         $data_inicio = $_POST['data_inicio'] ?? null;
         $data_termino = $_POST['data_termino'] ?? null;
         $inicio_inscricao = $_POST['inicio_inscricao'] ?? null;
         $termino_inscricao = $_POST['termino_inscricao'] ?? null;
 
         // Validações básicas
-        if (!$curso_id || !$empresa || !$data_inicio || !$data_termino || !$inicio_inscricao || !$termino_inscricao) {
+        if (!$curso_id || !$empresa_id || !$data_inicio || !$data_termino || !$inicio_inscricao || !$termino_inscricao) {
             header("Location: ../view/admin/cursos_disponiveis/cadastrar.php?erro=Preencha todos os campos obrigatórios.");
             exit;
         }
@@ -56,8 +55,7 @@ switch ($acao) {
         // Dados para inserção
         $dados = [
             'curso_id' => $curso_id,
-            'professor_id' => $professor_id ?: null,
-            'empresa' => $empresa,
+            'empresa_id' => $empresa_id,
             'data_inicio' => $data_inicio,
             'data_termino' => $data_termino,
             'inicio_inscricao' => $inicio_inscricao,
@@ -77,3 +75,4 @@ switch ($acao) {
         header("Location: ../view/dashboard/painel.php");
         exit;
 }
+?>

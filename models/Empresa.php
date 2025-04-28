@@ -126,5 +126,12 @@ class Empresa {
             return false;
         }
     }
+	
+	public function listarAtivas() {
+    $sql = "SELECT * FROM empresas WHERE ativo = 1 ORDER BY nome";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }
 ?>

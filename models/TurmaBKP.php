@@ -108,48 +108,5 @@ public function listarTodas() {
         $stmt = $this->conn->prepare("DELETE FROM turma WHERE id = ?");
         return $stmt->execute([$id]);
     }
-	
-	// Buscar alunos matriculados na turma
-public function listarAlunosTurma($idTurma)
-{
-    $sql = "SELECT 
-                fi.id,
-                fi.nome_aluno,
-                fi.cpf,
-                fi.contato
-            FROM fichas_inscricao fi
-            WHERE fi.turma_id = :idTurma
-            AND fi.status = 'matriculado'
-            ORDER BY fi.nome_aluno ASC";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':idTurma', $idTurma, PDO::PARAM_INT);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-
-// Buscar alunos na lista de espera da turma
-public function listarListaEsperaTurma($idTurma)
-{
-    $sql = "SELECT 
-                fi.id,
-                fi.nome_aluno,
-                fi.cpf,
-                fi.data_inscricao
-            FROM fichas_inscricao fi
-            WHERE fi.turma_id = :idTurma
-            AND fi.status = 'espera'
-            ORDER BY fi.data_inscricao ASC";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':idTurma', $idTurma, PDO::PARAM_INT);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-
-
-}
-
-
 ?>

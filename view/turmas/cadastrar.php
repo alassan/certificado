@@ -1,79 +1,116 @@
-<?php require_once __DIR__ . '/../includes/header.php'; ?>
+<?php
+require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../models/Turma.php';
+require_once __DIR__ . '/../../models/CursoDisponivel.php';
+require_once __DIR__ . '/../../models/Professor.php';
+
+session_start();
+require_once __DIR__ . '/../includes/header.php';
+
+// Buscar cursos disponíveis ATIVOS
+$cursoDisponivelModel = new CursoDisponivel($conn);
+$cursosDisponiveis = $cursoDisponivelModel->listarAtivos();
+
+// Buscar professores
+$professorModel = new Professor($conn);
+$professores = $professorModel->listarTodos();
+?>
 
 <div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-people-fill"></i> Cadastrar Nova Turma</h4>
-                </div>
-                <div class="card-body">
-                    <form action="/turmas/cadastrar" method="POST" id="form-turma">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="nome" class="form-label">Nome da Turma *</label>
-                                <input type="text" class="form-control" id="nome" name="nome" required>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="curso_id" class="form-label">Curso *</label>
-                                <select class="form-select" id="curso_id" name="curso_id" required>
-                                    <option value="">Selecione um curso...</option>
-                                    <?php foreach ($cursos as $curso) : ?>
-                                        <option value="<?= $curso['id'] ?>"><?= htmlspecialchars($curso['nome']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="data_inicio" class="form-label">Data de Início *</label>
-                                <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="data_fim" class="form-label">Data de Término *</label>
-                                <input type="date" class="form-control" id="data_fim" name="data_fim" required>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="professor_id" class="form-label">Professor</label>
-                                <select class="form-select" id="professor_id" name="professor_id">
-                                    <option value="">Selecione um professor...</option>
-                                    <?php foreach ($professores as $professor) : ?>
-                                        <option value="<?= $professor['id'] ?>"><?= htmlspecialchars($professor['nome']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="empresa_id" class="form-label">Empresa Parceira</label>
-                                <select class="form-select" id="empresa_id" name="empresa_id">
-                                    <option value="">Selecione uma empresa...</option>
-                                    <?php foreach ($empresas as $empresa) : ?>
-                                        <option value="<?= $empresa['id'] ?>"><?= htmlspecialchars($empresa['nome']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="local" class="form-label">Local *</label>
-                                <input type="text" class="form-control" id="local" name="local" required>
-                            </div>
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="bi bi-people-fill"></i> Cadastrar Nova Turma</h4>
+        </div>
+        <div class="card-body">
+            <form id="form-turma" action="/certificado/controllers/TurmaController.php?acao=salvar" method="POST">
+
+                <?php if (isset($_SESSION['mensagem_erro'])) : ?>
+                    <div class="alert alert-danger alert-dismissible fade show mb-4">
+                        <?= $_SESSION['mensagem_erro'] ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <?php unset($_SESSION['mensagem_erro']); ?>
+                <?php endif; ?>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nome da Turma *</label>
+                        <input type="text" name="nome" class="form-control" required placeholder="Ex: Turma A">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Curso Disponível *</label>
+                        <select name="curso_disponivel_id" class="form-select" required>
+                            <option value="">Selecione um curso...</option>
+                            <?php foreach ($cursosDisponiveis as $curso): ?>
+                                <option value="<?= htmlspecialchars($curso['id']) ?>">
+                                    <?= htmlspecialchars($curso['nome']) ?> (<?= $curso['carga_horaria'] ?? 'N/A' ?>h)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Capacidade Máxima *</label>
+                        <input type="number" name="capacidade_maxima" class="form-control" value="10" min="1" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Professor</label>
+                        <select name="professor_id" class="form-select">
+                            <option value="">Selecione um professor...</option>
+                            <?php foreach ($professores as $professor): ?>
+                                <option value="<?= htmlspecialchars($professor['id']) ?>">
+                                    <?= htmlspecialchars($professor['nome']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Local *</label>
+                        <input type="text" name="local" class="form-control" required placeholder="Ex: Sala de Aula 1">
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="alocar_automaticamente" id="alocar_automaticamente" checked>
+                            <label class="form-check-label" for="alocar_automaticamente">
+                                Alocar alunos automaticamente da lista de espera (se houver)
+                            </label>
                         </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                            <a href="/turmas/listar" class="btn btn-secondary me-md-2">
-                                <i class="bi bi-arrow-left"></i> Voltar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Salvar Turma
-                            </button>
-                        </div>
-                    </form>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/certificado/view/turmas/listar.php" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar Turma
+                        </button>
+                    </div>
                 </div>
-            </div>
+
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+// Validação de datas no front-end
+document.addEventListener('DOMContentLoaded', function() {
+    const dataInicio = document.getElementById('data_inicio');
+    const dataTermino = document.getElementById('data_termino');
+
+    dataInicio.addEventListener('change', function() {
+        if (dataTermino.value && dataInicio.value > dataTermino.value) {
+            dataTermino.value = dataInicio.value;
+        }
+        dataTermino.min = dataInicio.value;
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
