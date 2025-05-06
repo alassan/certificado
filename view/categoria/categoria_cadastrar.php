@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $nome = trim($_POST['nome']);
@@ -7,11 +7,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $sql = "INSERT INTO categorias (nome) VALUES (?)";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$nome]);
-        header("Location: categoria_listar.php?sucesso=1");
+        header("Location: /certificado/index.php?page=categoria/categoria_listar&sucesso=1");
         exit;
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>

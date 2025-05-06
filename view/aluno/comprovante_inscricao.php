@@ -1,14 +1,17 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
-require_once __DIR__ . '/../../phpqrcode/qrlib.php';
+require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../models/FichaInscricao.php';
-session_start();
+require_once __DIR__ . '/../includes/status_aluno.php';
 
-$id = $_GET['id'] ?? null;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-if (!$id || !is_numeric($id)) {
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+if (!$id) {
     $_SESSION['mensagem_erro'] = "ID de inscrição inválido.";
-    header('Location: listar_fichas.php');
+    header('Location: ../aluno/listar_fichas.php');
     exit;
 }
 
@@ -17,54 +20,61 @@ $ficha = $fichaModel->getById($id);
 
 if (!$ficha) {
     $_SESSION['mensagem_erro'] = "Ficha de inscrição não encontrada.";
-    header('Location: listar_fichas.php');
+    header('Location: ../aluno/listar_fichas.php');
     exit;
 }
 
-// Gerar QR Code de verificação
-$tempDir = __DIR__ . '/temp/';
-if (!is_dir($tempDir)) mkdir($tempDir, 0755, true);
+// Atualiza status automaticamente conforme datas
+$novoStatus = StatusAluno::atualizar($ficha, [
+    'data_inicio_curso' => $ficha['data_inicio'] ?? null,
+    'data_fim_curso' => $ficha['data_termino'] ?? null
+]);
 
-$qrFile = $tempDir . 'qrcode_' . $id . '.png';
-$link = "https://certificados.teresinadev.com.br/verificar_inscricao.php?id=" . $id;
-QRcode::png($link, $qrFile, QR_ECLEVEL_L, 4);
-$qrImage = base64_encode(file_get_contents($qrFile));
+if ($novoStatus && $novoStatus !== $ficha['status_aluno']) {
+    $fichaModel->atualizarStatus($id, $novoStatus);
+    $ficha['status_aluno'] = $novoStatus;
+}
+
+// Prepara mapeamento visual dos status
+$statusClass = [
+    'concluido' => ['success', 'bi-check-circle-fill', 'Concluído'],
+    'matriculado' => ['primary', 'bi-hourglass-split', 'Matriculado'],
+    'em_andamento' => ['warning', 'bi-hourglass-top', 'Em Andamento'],
+    'cancelado' => ['secondary', 'bi-x-circle-fill', 'Cancelado'],
+    'espera' => ['warning', 'bi-clock', 'Lista de Espera'],
+    'indefinido' => ['dark', 'bi-question-circle', 'Indefinido']
+];
+$statusKey = strtolower(str_replace(' ', '_', $ficha['status_aluno'] ?? 'indefinido'));
+$statusInfo = $statusClass[$statusKey] ?? $statusClass['indefinido'];
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Comprovante de Inscrição</title>
+  <title>Comprovante de Inscrição - <?= htmlspecialchars($ficha['nome_aluno']) ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <style>
     body { background-color: #f8f9fa; }
     .card { max-width: 800px; margin: 0 auto; }
-    .qrcode img { max-width: 150px; }
     .print-hidden { display: inline-block; }
     @media print {
       .print-hidden { display: none !important; }
       body { background-color: white; }
-      .card { box-shadow: none; border: 1px solid #ddd; }
+      .card { box-shadow: none; border: 1px solid #ddd; margin: 0; padding: 0; }
+      .container { padding: 0; }
     }
+    dt { font-weight: 500; }
   </style>
 </head>
 <body>
 <div class="container my-5">
   <div class="card shadow p-4">
-
-    <?php if (isset($_SESSION['mensagem_sucesso'])): ?>
-      <div class="alert alert-success text-center d-flex align-items-center justify-content-center gap-2">
-        <i class="bi bi-check-circle-fill fs-5"></i>
-        <?= htmlspecialchars($_SESSION['mensagem_sucesso']) ?>
-      </div>
-      <?php unset($_SESSION['mensagem_sucesso']); ?>
-    <?php endif; ?>
-
-    <h3 class="text-center mb-4 text-primary">
-      <i class="bi bi-receipt"></i> Comprovante de Inscrição
-    </h3>
+    <div class="text-center mb-4">
+      <h3 class="text-primary"><i class="bi bi-receipt"></i> Comprovante de Inscrição</h3>
+      <p class="text-muted small">Nº <?= $id ?> - Emitido em: <?= date('d/m/Y H:i') ?></p>
+    </div>
 
     <dl class="row">
       <dt class="col-sm-4">Nome do Aluno:</dt>
@@ -84,9 +94,9 @@ $qrImage = base64_encode(file_get_contents($qrFile));
 
       <dt class="col-sm-4">Endereço:</dt>
       <dd class="col-sm-8">
-        <?= htmlspecialchars($ficha['logradouro']) ?>, Nº <?= $ficha['numero'] ?>,
-        <?= htmlspecialchars($ficha['bairro']) ?>, <?= $ficha['cidade'] ?> - <?= $ficha['uf'] ?>,
-        CEP: <?= $ficha['cep'] ?>
+        <?= htmlspecialchars($ficha['logradouro']) ?>, Nº <?= htmlspecialchars($ficha['numero']) ?>,
+        <?= htmlspecialchars($ficha['bairro']) ?>, <?= htmlspecialchars($ficha['cidade']) ?> - <?= htmlspecialchars($ficha['uf']) ?>,
+        CEP: <?= htmlspecialchars($ficha['cep']) ?>
       </dd>
 
       <dt class="col-sm-4">Funcionário PMT:</dt>
@@ -94,19 +104,9 @@ $qrImage = base64_encode(file_get_contents($qrFile));
 
       <dt class="col-sm-4">Situação:</dt>
       <dd class="col-sm-8 fw-semibold">
-        <?php if ($ficha['status'] === 'concluido'): ?>
-          <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Concluído</span>
-        <?php elseif ($ficha['status'] === 'ativo'): ?>
-          <span class="badge bg-primary"><i class="bi bi-hourglass-split"></i> Ativo</span>
-        <?php else: ?>
-          <span class="badge bg-secondary"><i class="bi bi-x-circle-fill"></i> Cancelado</span>
-        <?php endif; ?>
-      </dd>
-
-      <dt class="col-sm-4">QR Code de Verificação:</dt>
-      <dd class="col-sm-8 qrcode">
-        <img src="data:image/png;base64,<?= $qrImage ?>" alt="QR Code">
-        <div class="mt-2 small text-muted">Escaneie para verificar a autenticidade</div>
+        <span class="badge bg-<?= $statusInfo[0] ?>">
+          <i class="bi <?= $statusInfo[1] ?>"></i> <?= $statusInfo[2] ?>
+        </span>
       </dd>
     </dl>
 
@@ -115,16 +115,16 @@ $qrImage = base64_encode(file_get_contents($qrFile));
         <i class="bi bi-printer me-1"></i> Imprimir
       </button>
 
-      <a href="listar_fichas.php" class="btn btn-outline-primary">
+      <a href="../aluno/listar_fichas.php" class="btn btn-outline-primary">
         <i class="bi bi-arrow-left"></i> Voltar à lista
       </a>
 
-      <a href="gerar_pdf_inscricao.php?id=<?= $ficha['id'] ?>" class="btn btn-outline-dark">
+      <a href="../aluno/gerar_pdf_inscricao.php?id=<?= htmlspecialchars($ficha['id']) ?>" class="btn btn-outline-dark">
         <i class="bi bi-file-earmark-pdf"></i> Baixar PDF
       </a>
 
-      <?php if ($ficha['status'] === 'ativo'): ?>
-        <a href="ficha_editar.php?id=<?= $ficha['id'] ?>" class="btn btn-warning">
+      <?php if ($statusKey === 'matriculado'): ?>
+        <a href="../aluno/ficha_editar.php?id=<?= htmlspecialchars($ficha['id']) ?>" class="btn btn-warning">
           <i class="bi bi-pencil-square"></i> Editar Ficha
         </a>
       <?php endif; ?>
@@ -132,6 +132,12 @@ $qrImage = base64_encode(file_get_contents($qrFile));
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.querySelector('button[onclick="window.print()"]').addEventListener('click', () => {
+    setTimeout(() => window.location.reload(), 1000);
+  });
+</script>
 </body>
 </html>

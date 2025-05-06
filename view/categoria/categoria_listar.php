@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 $categorias = $conn->query("SELECT * FROM categorias ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -64,6 +64,11 @@ $categorias = $conn->query("SELECT * FROM categorias ORDER BY nome ASC")->fetchA
       </tbody>
     </table>
   <?php endif; ?>
+  <div class="text-center mt-4">
+      <a href="index.php?page=dashboard/painel" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Painel
+      </a>
+    </div>
 </div>
 
 </body>

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 require 'fpdf/fpdf.php';
 require 'phpqrcode/qrlib.php';
 

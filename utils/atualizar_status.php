@@ -1,6 +1,6 @@
 <?php
 // utils/atualizar_status.php
-require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../config/conexao.php';
 
 try {
     // Atualiza para "ativo" se a data atual estiver entre o início e término da inscrição

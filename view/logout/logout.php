@@ -1,7 +1,7 @@
 <?php
 session_start();
-session_unset();
 session_destroy();
-header("Location: ../login/login.php");
+
+// Redireciona para a página pública inicial
+header("Location: /certificado/index.php");
 exit;
-?>

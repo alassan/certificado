@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 session_start();
 
 $usuario_id = $_SESSION['usuario_id'] ?? null;

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../models/Turma.php';
 require_once __DIR__ . '/../includes/header.php'; 
 require_once __DIR__ . '/../includes/_status_badge.php';
@@ -13,12 +13,17 @@ $turmas = $turmaModel->listarTodas();
 
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-people-fill"></i> Turmas</h2>
-        <div>
-            <a href="/turmas/cadastrar" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nova Turma</a>
-            <a href="/cursos-disponiveis" class="btn btn-secondary ms-2"><i class="bi bi-book"></i> Cursos Disponíveis</a>
-        </div>
+    <h2><i class="bi bi-people-fill"></i> Turmas</h2>
+    <div>
+        <a href="/certificado/view/turmas/cadastrar.php" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nova Turma
+        </a>
+        <a href="/certificado/view/admin/cursos_disponiveis/listar.php" class="btn btn-secondary ms-2">
+            <i class="bi bi-book"></i> Cursos Disponíveis
+        </a>
     </div>
+</div>
+
 
     <?php if (isset($_SESSION['mensagem_sucesso'])): ?>
         <div class="alert alert-success"><?= $_SESSION['mensagem_sucesso']; unset($_SESSION['mensagem_sucesso']); ?></div>
@@ -75,8 +80,14 @@ $turmas = $turmaModel->listarTodas();
                                 <td>
                                     <div class="btn-group">
                                         <a href="/certificado/view/turmas/visualizar.php?id=<?= $turma['id'] ?>" class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
-                                        <a href="/turmas/editar/<?= $turma['id'] ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
-                                        <button class="btn btn-sm btn-danger excluir-turma" data-id="<?= $turma['id'] ?>"><i class="bi bi-trash"></i></button>
+                                        <a href="/certificado/index.php?page=turmas/editar&id=<?= $turma['id'] ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                        <a href="/certificado/controllers/TurmaController.php?acao=excluir&id=<?= $turma['id'] ?>" 
+   onclick="return confirm('Tem certeza que deseja excluir esta turma?')" 
+   class="btn btn-sm btn-danger">
+   <i class="bi bi-trash"></i>
+</a>
+
+
                                     </div>
                                 </td>
                             </tr>
@@ -85,6 +96,11 @@ $turmas = $turmaModel->listarTodas();
                 </table>
             </div>
         </div>
+    </div>
+	<div class="text-center mt-4">
+      <a href="index.php?page=dashboard/painel" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Painel
+      </a>
     </div>
 </div>
 
@@ -103,4 +119,22 @@ $(document).ready(function() {
         }
     });
 });
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const botoesExcluir = document.querySelectorAll('.excluir-turma');
+
+    botoesExcluir.forEach(botao => {
+        botao.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+
+            if (confirm('Tem certeza que deseja excluir esta turma?')) {
+                window.location.href = `index.php?page=turmas/excluir&id=${id}`;
+            }
+        });
+    });
+});
+
+
 </script>

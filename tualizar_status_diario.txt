@@ -1,0 +1,8 @@
+<?php
+require_once __DIR__ . '/../config/conexao.php';
+require_once __DIR__ . '/../models/FichaInscricao.php';
+
+$ficha = new FichaInscricao($conn);
+$ficha->atualizarStatusAutomaticamente();
+
+echo "Status atualizado com sucesso em " . date('Y-m-d H:i:s');

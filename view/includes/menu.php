@@ -1,372 +1,347 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 
 // Verifica autenticação
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: ../login/login.php");
+    header("Location: index.php?page=login/login");
     exit;
 }
 
-// Dados do usuário
 $nome = htmlspecialchars($_SESSION['usuario_nome']);
 $nivel = htmlspecialchars($_SESSION['usuario_nivel']);
 $usuario_id = $_SESSION['usuario_id'];
 
-// Verifica página atual
 $uri = $_SERVER['REQUEST_URI'];
-$paginaAtual = basename($uri);
+$paginaAtual = basename(parse_url($uri, PHP_URL_PATH));
 
-// Verificar cursos disponíveis para alunos
-$mostrarFichaInscricao = false;
-if ($nivel === 'Aluno') {
-    $stmt = $conn->prepare("
-        SELECT COUNT(cd.id) 
-        FROM cursos_disponiveis cd
-        WHERE NOW() BETWEEN cd.inicio_inscricao AND cd.termino_inscricao
-          AND cd.id NOT IN (
-              SELECT curso_disponivel_id 
-              FROM fichas_inscricao 
-              WHERE usuario_id = ?
-          )
-    ");
-    $stmt->execute([$usuario_id]);
-    $mostrarFichaInscricao = $stmt->fetchColumn() > 0;
-}
-?>
-
-<!-- Sidebar -->
-<div class="sidebar">
-    <div class="sidebar-header text-center mb-4">
-        <img src="certificado/assets/images/logo_fwf.png" alt="Fundação Wall Ferraz" class="img-fluid mb-2" style="max-height: 60px;">
-        <h6 class="mb-0 text-muted">Prefeitura Municipal de Teresina/PI</h6>
-    </div>
-    
-    <ul class="nav flex-column">
-        <!-- Painel -->
-        <li class="nav-item">
-            <a href="../dashboard/painel.php" 
-               class="nav-link <?= $paginaAtual === 'painel.php' ? 'active' : '' ?>">
-                <i class="bi bi-house-door-fill"></i> Painel
-            </a>
-        </li>
-
-        <?php if ($nivel !== 'Aluno'): ?>
-        <!-- Cursos -->
-        <li class="nav-item">
-            <a class="nav-link <?= str_contains($uri, 'curso/') ? '' : 'collapsed' ?>" 
-               data-bs-toggle="collapse" href="#menuCursos" role="button" 
-               aria-expanded="<?= str_contains($uri, 'curso/') ? 'true' : 'false' ?>">
-                <i class="bi bi-mortarboard-fill"></i> Cursos
-            </a>
-            <div class="collapse submenu <?= str_contains($uri, 'curso/') ? 'show' : '' ?>" id="menuCursos">
-                <a href="../curso/curso_cadastrar.php" 
-                   class="nav-link <?= $paginaAtual === 'curso_cadastrar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-plus-circle"></i> Cadastrar
-                </a>
-                <a href="../curso/curso_listar.php" 
-                   class="nav-link <?= $paginaAtual === 'curso_listar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-card-list"></i> Listar
-                </a>
-                <a href="../admin/cursos_disponiveis/cadastrar.php" 
-                   class="nav-link <?= $paginaAtual === 'cadastrar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-gear-fill"></i> Gerenciar
-                </a>
-                <a href="../admin/cursos_disponiveis/listar.php" 
-                   class="nav-link <?= $paginaAtual === 'listar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-check2-square"></i> Disponíveis
-                </a>
-            </div>
-        </li>
-
-        <!-- Categorias -->
-        <li class="nav-item">
-            <a class="nav-link <?= str_contains($uri, 'categoria/') ? '' : 'collapsed' ?>" 
-               data-bs-toggle="collapse" href="#menuCategorias" role="button" 
-               aria-expanded="<?= str_contains($uri, 'categoria/') ? 'true' : 'false' ?>">
-                <i class="bi bi-folder2-open"></i> Categorias
-            </a>
-            <div class="collapse submenu <?= str_contains($uri, 'categoria/') ? 'show' : '' ?>" id="menuCategorias">
-                <a href="../categoria/categoria_cadastrar.php" 
-                   class="nav-link <?= $paginaAtual === 'categoria_cadastrar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-plus-circle"></i> Cadastrar
-                </a>
-                <a href="../categoria/categoria_listar.php" 
-                   class="nav-link <?= $paginaAtual === 'categoria_listar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-card-list"></i> Listar
-                </a>
-            </div>
-        </li>
-
-        <!-- Professores -->
-        <li class="nav-item">
-            <a class="nav-link <?= str_contains($uri, 'professor/') ? '' : 'collapsed' ?>" 
-               data-bs-toggle="collapse" href="#menuProfessores" role="button" 
-               aria-expanded="<?= str_contains($uri, 'professor/') ? 'true' : 'false' ?>">
-                <i class="bi bi-person-badge-fill"></i> Professores
-            </a>
-            <div class="collapse submenu <?= str_contains($uri, 'professor/') ? 'show' : '' ?>" id="menuProfessores">
-                <a href="../professor/professor_cadastrar.php" 
-                   class="nav-link <?= $paginaAtual === 'professor_cadastrar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-plus-circle"></i> Cadastrar
-                </a>
-                <a href="../professor/professor_listar.php" 
-                   class="nav-link <?= $paginaAtual === 'professor_listar.php' ? 'active' : '' ?>">
-                    <i class="bi bi-card-list"></i> Listar
-                </a>
-            </div>
-        </li>
-        <?php endif; ?>
-		<!-- Add this new menu item after the Professors section -->
-<?php if ($nivel !== 'Aluno'): ?>
-<!-- Turmas -->
-<li class="nav-item">
-    <a class="nav-link <?= str_contains($uri, 'turma/') ? '' : 'collapsed' ?>" 
-       data-bs-toggle="collapse" href="#menuTurmas" role="button" 
-       aria-expanded="<?= str_contains($uri, 'turma/') ? 'true' : 'false' ?>">
-        <i class="bi bi-people-fill"></i> Turmas
-    </a>
-    <div class="collapse submenu <?= str_contains($uri, 'turma/') ? 'show' : '' ?>" id="menuTurmas">
-        <a href="../turmas/cadastrar.php" 
-           class="nav-link <?= $paginaAtual === 'cadastrar.php' ? 'active' : '' ?>">
-            <i class="bi bi-plus-circle"></i> Cadastrar
-        </a>
-        <a href="../turmas/listar.php" 
-           class="nav-link <?= $paginaAtual === 'listar.php' ? 'active' : '' ?>">
-            <i class="bi bi-card-list"></i> Listar
-        </a>
-    </div>
-</li>
-
-<!-- Empresas -->
-<li class="nav-item">
-    <a class="nav-link <?= str_contains($uri, 'empresa/') ? '' : 'collapsed' ?>" 
-       data-bs-toggle="collapse" href="#menuEmpresas" role="button" 
-       aria-expanded="<?= str_contains($uri, 'empresa/') ? 'true' : 'false' ?>">
-        <i class="bi bi-building"></i> Empresas
-    </a>
-    <div class="collapse submenu <?= str_contains($uri, 'empresa/') ? 'show' : '' ?>" id="menuEmpresas">
-        <a href="../empresas/cadastrar.php" 
-           class="nav-link <?= $paginaAtual === 'cadastrar.php' ? 'active' : '' ?>">
-            <i class="bi bi-plus-circle"></i> Cadastrar
-        </a>
-        <a href="../empresas/listar.php" 
-           class="nav-link <?= $paginaAtual === 'listar.php' ? 'active' : '' ?>">
-            <i class="bi bi-card-list"></i> Listar
-        </a>
-    </div>
-</li>
-<?php endif; ?>
-
-        <?php if ($nivel === 'Aluno'): ?>
-        <!-- Meus Cursos -->
-        <li class="nav-item">
-            <a class="nav-link <?= str_contains($uri, 'meus_cursos.php') ? '' : 'collapsed' ?>" 
-               data-bs-toggle="collapse" href="#menuMeusCursos" role="button" 
-               aria-expanded="<?= str_contains($uri, 'meus_cursos.php') ? 'true' : 'false' ?>">
-                <i class="bi bi-journal-bookmark-fill"></i> Meus Cursos
-            </a>
-            <div class="collapse submenu <?= str_contains($uri, 'meus_cursos.php') ? 'show' : '' ?>" id="menuMeusCursos">
-                <a href="../curso/meus_cursos.php?status=ativo" 
-                   class="nav-link <?= isset($_GET['status']) && $_GET['status'] === 'ativo' ? 'active' : '' ?>">
-                    <i class="bi bi-hourglass-split"></i> Ativos
-                </a>
-                <a href="../curso/meus_cursos.php?status=concluido" 
-                   class="nav-link <?= isset($_GET['status']) && $_GET['status'] === 'concluido' ? 'active' : '' ?>">
-                    <i class="bi bi-check2-circle"></i> Concluídos
-                </a>
-                <a href="../curso/meus_cursos.php?status=cancelado" 
-                   class="nav-link <?= isset($_GET['status']) && $_GET['status'] === 'cancelado' ? 'active' : '' ?>">
-                    <i class="bi bi-x-circle"></i> Cancelados
-                </a>
-            </div>
-        </li>
-        <?php endif; ?>
-
-        <!-- Aluno -->
-        <li class="nav-item">
-            <a class="nav-link <?= str_contains($uri, 'aluno/') ? '' : 'collapsed' ?>" 
-               data-bs-toggle="collapse" href="#menuAlunos" role="button" 
-               aria-expanded="<?= str_contains($uri, 'aluno/') ? 'true' : 'false' ?>">
-                <i class="bi bi-people-fill"></i> Aluno
-            </a>
-            <div class="collapse submenu <?= str_contains($uri, 'aluno/') ? 'show' : '' ?>" id="menuAlunos">
-                <?php if ($nivel === 'Aluno' && $mostrarFichaInscricao): ?>
-                <a href="../aluno/ficha_inscricao.php" 
-                   class="nav-link <?= $paginaAtual === 'ficha_inscricao.php' ? 'active' : '' ?>">
-                    <i class="bi bi-pencil-square"></i> Nova Inscrição
-                </a>
-                <?php endif; ?>
-                <a href="../aluno/listar_fichas.php" 
-                   class="nav-link <?= $paginaAtual === 'listar_fichas.php' ? 'active' : '' ?>">
-                    <i class="bi bi-list-task"></i> Minhas Inscrições
-                </a>
-            </div>
-        </li>
-
-<?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-require_once __DIR__ . '/../../conexao.php';
-
-// Verifica autenticação
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: ../login/login.php");
-    exit;
-}
-
-// Dados do usuário
-$nome = htmlspecialchars($_SESSION['usuario_nome']);
-$nivel = htmlspecialchars($_SESSION['usuario_nivel']);
-$usuario_id = $_SESSION['usuario_id'];
-
-// Verifica página atual
-$uri = $_SERVER['REQUEST_URI'];
-$paginaAtual = basename($uri);
-
-// Verificar cursos disponíveis para alunos
 $mostrarFichaInscricao = false;
 $mostrarMeusCertificados = false;
-
 if ($nivel === 'Aluno') {
-    // Verifica se há cursos abertos para inscrição
-    $stmt = $conn->prepare("
-        SELECT COUNT(cd.id) 
-        FROM cursos_disponiveis cd
-        WHERE NOW() BETWEEN cd.inicio_inscricao AND cd.termino_inscricao
-          AND cd.id NOT IN (
-              SELECT curso_disponivel_id 
-              FROM fichas_inscricao 
-              WHERE usuario_id = ?
-          )
-    ");
+    $stmt = $conn->prepare("SELECT COUNT(cd.id) FROM cursos_disponiveis cd WHERE NOW() BETWEEN cd.inicio_inscricao AND cd.termino_inscricao AND cd.id NOT IN (SELECT curso_disponivel_id FROM fichas_inscricao WHERE usuario_id = ?)");
     $stmt->execute([$usuario_id]);
     $mostrarFichaInscricao = $stmt->fetchColumn() > 0;
 
-    // Verifica se há certificados disponíveis (curso concluído)
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) FROM fichas_inscricao 
-        WHERE usuario_id = ? AND status = 'concluido'
-    ");
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM fichas_inscricao WHERE usuario_id = ? AND status_aluno = 'concluido'");
     $stmt->execute([$usuario_id]);
     $mostrarMeusCertificados = $stmt->fetchColumn() > 0;
 }
 ?>
 
-<!-- Certificados -->
-<?php if ($nivel !== 'Aluno' || $mostrarMeusCertificados): ?>
-<li class="nav-item">
-    <a class="nav-link <?= str_contains($uri, 'certificados/') ? '' : 'collapsed' ?>" 
-       data-bs-toggle="collapse" href="#menuCertificados" role="button" 
-       aria-expanded="<?= str_contains($uri, 'certificados/') ? 'true' : 'false' ?>">
-        <i class="bi bi-award"></i> Certificados
-    </a>
-    <div class="collapse submenu <?= str_contains($uri, 'certificados/') ? 'show' : '' ?>" id="menuCertificados">
-        <?php if ($nivel === 'Aluno' && $mostrarMeusCertificados): ?>
-        <a href="../certificados/exibir_certificado.php" 
-           class="nav-link <?= $paginaAtual === 'exibir_certificado.php' ? 'active' : '' ?>">
-            <i class="bi bi-card-checklist"></i> Meus Certificados
-        </a>
-        <?php endif; ?>
-
-        <?php if ($nivel !== 'Aluno'): ?>
-        <a href="../certificados/form_busca.php" 
-           class="nav-link <?= $paginaAtual === 'form_busca.php' ? 'active' : '' ?>">
-            <i class="bi bi-search"></i> Validar Certificado
-        </a>
-        <?php endif; ?>
+<!-- Sidebar Elegante -->
+<div class="sidebar">
+    <!-- Cabeçalho do Menu -->
+    <div class="sidebar-header text-center p-3">
+        <div class="logo-container mb-2">
+            <img src="/certificado/assets/img/logo_fwf.png" alt="Fundação Wall Ferraz" class="logo-img">
+        </div>
+        <h6 class="institution-name">Prefeitura Municipal de Teresina/PI</h6>
     </div>
-</li>
-<?php endif; ?>
 
+    <!-- Itens do Menu -->
+    <div class="menu-content">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="index.php?page=dashboard/painel" class="nav-link <?= $paginaAtual === 'painel.php' ? 'active' : '' ?>">
+                    <i class="bi bi-house-door me-2"></i>
+                    <span>Painel</span>
+                </a>
+            </li>
 
+            <?php if ($nivel !== 'Aluno'): ?>
+                <!-- Menu Administrativo -->
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuCursos">
+                        <i class="bi bi-mortarboard me-2"></i>
+                        <span>Cursos</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuCursos">
+                        <a href="index.php?page=curso/curso_cadastrar" class="nav-link">Cadastrar</a>
+                        <a href="index.php?page=curso/curso_listar" class="nav-link">Listar</a>
+                        <a href="index.php?page=admin/cursos_disponiveis/cadastrar" class="nav-link">Gerenciar</a>
+                        <a href="index.php?page=admin/cursos_disponiveis/listar" class="nav-link">Disponíveis</a>
+                    </div>
+                </li>
+				
+	<!-- Categoria -->
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuCategorias">
+                        <i class="bi bi-folder2 me-2"></i>
+                        <span>Categorias</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuCategorias">
+                        <a href="index.php?page=categoria/categoria_cadastrar" class="nav-link">Cadastrar</a>
+                        <a href="index.php?page=categoria/categoria_listar" class="nav-link">Listar</a>
+                    </div>
+                </li>
+							<!-- Novo menu para Tópicos de Conteúdo -->
+    <li class="nav-item menu-group">
+        <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuTopicos">
+            <i class="bi bi-journal-text me-2"></i>
+            <span>Tópicos de Conteúdo</span>
+            <i class="bi bi-chevron-down arrow-icon"></i>
+        </a>
+        <div class="collapse menu-subgroup" id="menuTopicos">
+            <a href="index.php?page=admin/conteudo_topico/form_topico" class="nav-link">Cadastrar Tópico</a>
+            <a href="index.php?page=admin/conteudo_topico/listar_topicos" class="nav-link">Listar Tópicos</a>
+        </div>
+    </li>
 
-        <hr class="my-3">
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuProfessores">
+                        <i class="bi bi-person-badge me-2"></i>
+                        <span>Professores</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuProfessores">
+                        <a href="index.php?page=professor/professor_cadastrar" class="nav-link">Cadastrar</a>
+                        <a href="index.php?page=professor/professor_listar" class="nav-link">Listar</a>
+                    </div>
+                </li>
 
-        <!-- Perfil e Sair -->
-        <li class="nav-item">
-            <a href="../perfil/perfil.php" 
-               class="nav-link <?= $paginaAtual === 'perfil.php' ? 'active' : '' ?>">
-                <i class="bi bi-person-circle"></i> Meu Perfil
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="../logout/logout.php" class="nav-link text-danger">
-                <i class="bi bi-box-arrow-right"></i> Sair
-            </a>
-        </li>
-    </ul>
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuTurmas">
+                        <i class="bi bi-people me-2"></i>
+                        <span>Turmas</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuTurmas">
+                        <a href="index.php?page=turmas/cadastrar" class="nav-link">Cadastrar</a>
+                        <a href="index.php?page=turmas/listar" class="nav-link">Listar</a>
+                        <a href="index.php?page=turmas/gerenciar" class="nav-link">Gerenciar</a>
+                    </div>
+                </li>
+
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuEmpresas">
+                        <i class="bi bi-building me-2"></i>
+                        <span>Empresas</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuEmpresas">
+                        <a href="index.php?page=empresas/cadastrar" class="nav-link">Cadastrar</a>
+                        <a href="index.php?page=empresas/listar" class="nav-link">Listar</a>
+                    </div>
+                </li>
+
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuRelatorios">
+                        <i class="bi bi-graph-up me-2"></i>
+                        <span>Relatórios</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuRelatorios">
+                        <a href="index.php?page=relatorios/alunos_por_turma" class="nav-link">Alunos por Turma</a>
+                        <a href="index.php?page=relatorios/alunos_por_curso" class="nav-link">Alunos por Curso</a>
+                        <a href="index.php?page=relatorios/relacao_por_turma" class="nav-link">Relação por Turma</a>
+                        <a href="index.php?page=relatorios/relacao_por_curso" class="nav-link">Relação por Curso</a>
+                        <a href="index.php?page=relatorios/alunos_por_ano" class="nav-link">Alunos por Ano</a>
+                        <a href="index.php?page=relatorios/concluidos_por_ano" class="nav-link">Concluídos por Ano</a>
+                    </div>
+                </li>
+            <?php endif; ?>
+
+            <?php if ($nivel === 'Aluno'): ?>
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuMeusCursos">
+                        <i class="bi bi-journal-bookmark me-2"></i>
+                        <span>Meus Cursos</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuMeusCursos">
+                        <a href="index.php?page=curso/meus_cursos&status=ativo" class="nav-link">Ativos</a>
+                        <a href="index.php?page=curso/meus_cursos&status=concluido" class="nav-link">Concluídos</a>
+                        <a href="index.php?page=curso/meus_cursos&status=cancelado" class="nav-link">Cancelados</a>
+                    </div>
+                </li>
+            <?php endif; ?>
+
+            <li class="nav-item menu-group">
+                <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuAlunos">
+                    <i class="bi bi-person me-2"></i>
+                    <span>Aluno</span>
+                    <i class="bi bi-chevron-down arrow-icon"></i>
+                </a>
+                <div class="collapse menu-subgroup" id="menuAlunos">
+                    <?php if ($nivel === 'Aluno' && $mostrarFichaInscricao): ?>
+                        <a href="index.php?page=aluno/ficha_inscricao" class="nav-link">Nova Inscrição</a>
+                    <?php endif; ?>
+                    <a href="index.php?page=aluno/listar_fichas" class="nav-link">Minhas Inscrições</a>
+                </div>
+            </li>
+
+            <?php if ($nivel !== 'Aluno' || $mostrarMeusCertificados): ?>
+                <li class="nav-item menu-group">
+                    <a class="nav-link menu-toggle" data-bs-toggle="collapse" href="#menuCertificados">
+                        <i class="bi bi-award me-2"></i>
+                        <span>Certificados</span>
+                        <i class="bi bi-chevron-down arrow-icon"></i>
+                    </a>
+                    <div class="collapse menu-subgroup" id="menuCertificados">
+                        <?php if ($nivel === 'Aluno' && $mostrarMeusCertificados): ?>
+                            <a href="index.php?page=certificados/exibir_certificado" class="nav-link">Meus Certificados</a>
+                        <?php endif; ?>
+                        <?php if ($nivel !== 'Aluno'): ?>
+                            <a href="index.php?page=certificados/form_busca" class="nav-link">Validar Certificado</a>
+                        <?php endif; ?>
+                    </div>
+                </li>
+            <?php endif; ?>
+
+            <li class="nav-divider my-2"></li>
+
+            <li class="nav-item">
+                <a href="index.php?page=perfil/perfil" class="nav-link">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <span>Meu Perfil</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="index.php?page=logout/logout" class="nav-link text-danger">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    <span>Sair</span>
+                </a>
+            </li>
+        </ul>
+    </div>
 </div>
 
 <style>
 .sidebar {
-    width: 250px;
-    background-color: #fff;
-    min-height: 100vh;
-    padding: 1.5rem 1rem;
+    width: 260px;
+    background: white;
+    height: 100vh;
     position: fixed;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    border-right: 1px solid #e9ecef;
+    z-index: 1030;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-header {
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e9ecef;
-    margin-bottom: 1rem;
+    padding: 1.5rem 1rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.sidebar .nav-link {
-    color: #495057;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-    transition: all 0.2s;
+.logo-container {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.sidebar .nav-link i {
-    margin-right: 10px;
-    font-size: 1rem;
-    width: 20px;
-    text-align: center;
+.logo-img {
+    max-height: 50px;
+    width: auto;
 }
 
-.sidebar .nav-link:hover {
-    background-color: #f8f9fa;
-    color: #0d6efd;
-}
-
-.sidebar .nav-link.active {
-    background-color: #e7f1ff;
-    color: #0d6efd;
+.institution-name {
+    font-size: 0.8rem;
+    color: #6c757d;
     font-weight: 500;
 }
 
-.sidebar .nav-link.text-danger:hover {
+.menu-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    color: #495057;
+    padding: 0.65rem 1.5rem;
+    margin: 0.1rem 0;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.nav-link:hover {
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.nav-link.active {
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.nav-link i {
+    width: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.arrow-icon {
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+}
+
+.menu-toggle:not(.collapsed) .arrow-icon {
+    transform: rotate(180deg);
+}
+
+.menu-subgroup {
+    padding-left: 2.5rem;
+}
+
+.menu-subgroup .nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+.menu-subgroup .nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.03);
+}
+
+.nav-divider {
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.05);
+    margin: 0.5rem 1.5rem;
+}
+
+.text-danger {
     color: #dc3545 !important;
-    background-color: #f8f9fa;
 }
 
-.submenu {
-    padding-left: 1.5rem;
-    margin: 0.5rem 0;
-}
-
-.submenu .nav-link {
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
-}
-
+/* Responsividade */
 @media (max-width: 768px) {
     .sidebar {
-        position: relative;
-        width: 100%;
-        min-height: auto;
-        box-shadow: none;
-        border-right: none;
-        border-bottom: 1px solid #e9ecef;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    .sidebar.active {
+        transform: translateX(0);
     }
 }
 </style>
+
+<script>
+// Ativar submenus quando a página for carregada
+document.addEventListener('DOMContentLoaded', function() {
+    // Mantém o submenu aberto se estiver na página correspondente
+    const currentPath = window.location.pathname.split('/').pop();
+    const menuLinks = document.querySelectorAll('.menu-subgroup a.nav-link');
+    
+    menuLinks.forEach(link => {
+        if (link.getAttribute('href').includes(currentPath)) {
+            link.classList.add('active');
+            const parentCollapse = link.closest('.collapse');
+            if (parentCollapse) {
+                parentCollapse.classList.add('show');
+                const toggle = document.querySelector(`[href="#${parentCollapse.id}"]`);
+                if (toggle) {
+                    toggle.classList.remove('collapsed');
+                }
+            }
+        }
+    });
+});
+</script>

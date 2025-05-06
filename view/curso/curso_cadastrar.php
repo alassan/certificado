@@ -1,37 +1,62 @@
 <?php
-require_once __DIR__ . '/../../models/conexao.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Verifica se o usuário está logado e tem permissão
+if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_nivel'], ['Admin', 'Funcionário'])) {
+    header("Location: ../login/login.php");
+    exit;
+}
+
+require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../models/Categoria.php';
 require_once __DIR__ . '/../../models/Curso.php';
 
 $categoriaModel = new Categoria($conn);
 $categorias = $categoriaModel->listarTodos();
 
+$mensagemErro = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cursoModel = new Curso($conn);
 
     $dados = [
-        'nome' => $_POST['nome'] ?? '',
+        'nome' => trim($_POST['nome'] ?? ''),
         'descricao' => $_POST['descricao'] ?? '',
         'categoria_id' => $_POST['categoria_id'] ?? '',
         'carga_horaria' => $_POST['carga_horaria'] ?? '',
         'nivel_academico' => $_POST['nivel_academico'] ?? 'Não especificado',
     ];
 
-    $cursoModel->cadastrar($dados);
+    // Verifica duplicidade de nome
+    $existe = $cursoModel->buscarPorNome($dados['nome']);
+    if ($existe) {
+        $_SESSION['mensagem_erro'] = 'Já existe um curso com esse nome.';
+        header("Location: /certificado/index.php?page=curso/curso_cadastrar");
+        exit;
+    }
 
-    header("Location: cursos_listar.php");
-    exit;
+    if ($cursoModel->cadastrar($dados)) {
+        $_SESSION['mensagem_sucesso'] = 'Curso cadastrado com sucesso!';
+        header("Location: /certificado/index.php?page=curso/curso_listar");
+        exit;
+    } else {
+        $_SESSION['mensagem_erro'] = 'Erro ao salvar o curso.';
+        header("Location: /certificado/index.php?page=curso/curso_cadastrar");
+        exit;
+    }
 }
 ?>
 
 <?php include __DIR__ . '/../includes/header.php'; ?>
 
 <div class="container container-fluid mt-4">
+    <?php include __DIR__ . '/../includes/mensagem.php'; ?>
+
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">
-                <i class="fas fa-plus-circle me-2"></i>Cadastrar Novo Curso
-            </h4>
+            <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i> Cadastrar Novo Curso</h4>
         </div>
 
         <div class="card-body">
@@ -80,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="mt-4 d-flex justify-content-between">
-                    <a href="javascript:history.back()" class="btn btn-secondary">
+                    <a href="index.php?page=curso/curso_listar" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Voltar
                     </a>
                     <button type="submit" class="btn btn-primary">

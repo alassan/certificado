@@ -1,7 +1,9 @@
 <?php
 // arquivo: ficha_editar.php
-require_once __DIR__ . '/../../conexao.php';
-session_start();
+require_once __DIR__ . '/../../config/conexao.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_nivel'], ['admin', 'Aluno'])) {
     echo "<p class='text-danger text-center mt-4'>Acesso negado.</p>";
@@ -61,7 +63,8 @@ if (!$ficha) {
         <textarea name="observacoes" id="observacoes" class="form-control" rows="3"><?= htmlspecialchars($ficha['observacoes']) ?></textarea>
       </div>
       <button type="submit" class="btn btn-primary">Salvar</button>
-      <a href="listar_fichas.php" class="btn btn-secondary">Cancelar</a>
+      <a href="index.php?page=aluno/listar_fichas" class="btn btn-secondary">Cancelar</a>
+
     </form>
   </div>
 </div>

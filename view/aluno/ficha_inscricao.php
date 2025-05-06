@@ -1,7 +1,8 @@
 <?php
-session_start();
-require_once __DIR__ . '/../../conexao.php';
-
+require_once __DIR__ . '/../../config/conexao.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 // Verifica se há mensagens para exibir
 $mensagemErro = $_SESSION['mensagem_erro'] ?? null;
 $mensagemSucesso = $_SESSION['mensagem_sucesso'] ?? null;
@@ -51,21 +52,18 @@ $sql = "
     SELECT cd.id, c.nome, cd.inicio_inscricao, cd.termino_inscricao
     FROM cursos_disponiveis cd
     JOIN cursos c ON c.id = cd.curso_id
-    WHERE cd.inicio_inscricao <= :hoje
-      AND cd.termino_inscricao >= :hoje
+    WHERE cd.inicio_inscricao <= ?
+      AND cd.termino_inscricao >= ?
       AND cd.id NOT IN (
           SELECT curso_disponivel_id 
           FROM fichas_inscricao 
-          WHERE usuario_id = :usuario_id
+          WHERE usuario_id = ?
       )
     ORDER BY c.nome
 ";
-
 $stmt = $conn->prepare($sql);
-$stmt->execute([
-    'hoje' => $hoje,
-    'usuario_id' => $usuario_id
-]);
+$stmt->execute([$hoje, $hoje, $usuario_id]);
+
 $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -107,6 +105,13 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       background-color: #0d6efd;
       border-color: #0d6efd;
     }
+    .sem-cep {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #6c757d;
+      cursor: pointer;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -139,16 +144,12 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       </div>
     <?php else: ?>
 
-    <form action="../../controllers/FichaInscricaoController.php" method="POST" onsubmit="return validarFormulario()">
+    <form action="/certificado/controllers/FichaInscricaoController.php" method="POST" onsubmit="return validarFormulario();">
       <div class="form-section-title">👤 Dados do Aluno</div>
       <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Nome do Aluno <span class="text-danger">*</span></label>
           <input type="text" class="form-control" name="nome_aluno" value="<?= htmlspecialchars($nomeUsuarioLogado) ?>" readonly>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">E-mail</label>
-          <input type="email" class="form-control" name="email_aluno" value="<?= htmlspecialchars($dadosAluno['email'] ?? '') ?>">
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">CPF <span class="text-danger">*</span></label>
@@ -164,17 +165,12 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <div class="col-md-12 mb-3">
           <label class="form-label">Curso <span class="text-danger">*</span></label>
-          <select name="curso_id" class="form-select" required>
+          <select name="curso_disponivel_id" class="form-select" required>
             <option value="">Selecione um curso...</option>
             <?php foreach ($cursos as $curso): ?>
               <option value="<?= $curso['id'] ?>">
-                <div class="curso-option">
-                  <span><?= htmlspecialchars($curso['nome']) ?></span>
-                  <span class="curso-periodo">
-                    (Inscrições: <?= date('d/m/Y', strtotime($curso['inicio_inscricao'])) ?> 
-                    a <?= date('d/m/Y', strtotime($curso['termino_inscricao'])) ?>)
-                  </span>
-                </div>
+                <?= htmlspecialchars($curso['nome']) ?> 
+                (<?= date('d/m/Y', strtotime($curso['inicio_inscricao'])) ?> a <?= date('d/m/Y', strtotime($curso['termino_inscricao'])) ?>)
               </option>
             <?php endforeach; ?>
           </select>
@@ -184,24 +180,25 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="form-section-title">🏠 Endereço</div>
       <div class="row">
         <div class="col-md-4 mb-3">
-          <label class="form-label">CEP <span class="text-danger">*</span></label>
-          <input type="text" id="cep" name="cep" class="form-control cep" value="<?= htmlspecialchars($enderecoAluno['cep'] ?? '') ?>" required>
+          <label class="form-label">CEP</label>
+          <input type="text" id="cep" name="cep" class="form-control cep" value="<?= htmlspecialchars($enderecoAluno['cep'] ?? '') ?>">
+          <div class="sem-cep" onclick="habilitarPreenchimentoManual()">Não tenho CEP ou meu endereço não aparece</div>
         </div>
         <div class="col-md-8 mb-3">
           <label class="form-label">Logradouro <span class="text-danger">*</span></label>
-          <input type="text" id="logradouro" name="logradouro" class="form-control" value="<?= htmlspecialchars($enderecoAluno['logradouro'] ?? '') ?>" readonly required>
+          <input type="text" id="logradouro" name="logradouro" class="form-control" value="<?= htmlspecialchars($enderecoAluno['logradouro'] ?? '') ?>" required>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Bairro <span class="text-danger">*</span></label>
-          <input type="text" id="bairro" name="bairro" class="form-control" value="<?= htmlspecialchars($enderecoAluno['bairro'] ?? '') ?>" readonly required>
+          <input type="text" id="bairro" name="bairro" class="form-control" value="<?= htmlspecialchars($enderecoAluno['bairro'] ?? '') ?>" required>
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Cidade <span class="text-danger">*</span></label>
-          <input type="text" id="cidade" name="cidade" class="form-control" value="<?= htmlspecialchars($enderecoAluno['cidade'] ?? '') ?>" readonly required>
+          <input type="text" id="cidade" name="cidade" class="form-control" value="<?= htmlspecialchars($enderecoAluno['cidade'] ?? '') ?>" required>
         </div>
         <div class="col-md-2 mb-3">
           <label class="form-label">UF <span class="text-danger">*</span></label>
-          <input type="text" id="uf" name="uf" class="form-control" value="<?= htmlspecialchars($enderecoAluno['uf'] ?? '') ?>" readonly required>
+          <input type="text" id="uf" name="uf" class="form-control" value="<?= htmlspecialchars($enderecoAluno['uf'] ?? '') ?>" required>
         </div>
         <div class="col-md-2 mb-3">
           <label class="form-label">Número <span class="text-danger">*</span></label>
@@ -223,7 +220,7 @@ $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <button type="submit" class="btn btn-primary btn-lg">
           <i class="bi bi-save2"></i> Salvar Ficha
         </button>
-        <a href="../dashboard/painel.php" class="btn btn-outline-secondary">
+        <a href="index.php?page=dashboard/painel" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i> Voltar
         </a>
       </div>
@@ -250,33 +247,36 @@ $(document).ready(function(){
     }
 });
 
+// Função para habilitar preenchimento manual
+function habilitarPreenchimentoManual() {
+    $('#logradouro').prop('readonly', false).val('');
+    $('#bairro').prop('readonly', false).val('');
+    $('#cidade').prop('readonly', false).val('');
+    $('#uf').prop('readonly', false).val('');
+    $('#cep').val('').focus();
+}
+
 // Função para buscar endereço
 function buscarEndereco(cep) {
+    if (cep.length !== 8) return;
+    
     fetch(`https://viacep.com.br/ws/${cep}/json/`)
         .then(response => response.json())
         .then(data => {
             if (!data.erro) {
-                $('#logradouro').val(data.logradouro);
-                $('#bairro').val(data.bairro);
-                $('#cidade').val(data.localidade);
-                $('#uf').val(data.uf);
+                $('#logradouro').val(data.logradouro).prop('readonly', false);
+                $('#bairro').val(data.bairro).prop('readonly', false);
+                $('#cidade').val(data.localidade).prop('readonly', false);
+                $('#uf').val(data.uf).prop('readonly', false);
             } else {
-                alert("CEP não encontrado.");
-                // Libera os campos para edição manual
-                $('#logradouro').prop('readonly', false);
-                $('#bairro').prop('readonly', false);
-                $('#cidade').prop('readonly', false);
-                $('#uf').prop('readonly', false);
+                alert("CEP não encontrado. Preencha os dados manualmente.");
+                habilitarPreenchimentoManual();
             }
         })
         .catch(error => {
             console.error("Erro ao buscar CEP:", error);
-            alert("Erro ao buscar CEP. Preencha os campos manualmente.");
-            // Libera os campos para edição manual
-            $('#logradouro').prop('readonly', false);
-            $('#bairro').prop('readonly', false);
-            $('#cidade').prop('readonly', false);
-            $('#uf').prop('readonly', false);
+            alert("Erro ao buscar CEP. Preencha os dados manualmente.");
+            habilitarPreenchimentoManual();
         });
 }
 
@@ -301,6 +301,15 @@ function validarFormulario() {
     if (dataNascimento >= hoje) {
         alert('Data de nascimento inválida. Deve ser anterior à data atual.');
         return false;
+    }
+
+    // Validação dos campos de endereço
+    const camposEndereco = ['logradouro', 'bairro', 'cidade', 'uf', 'numero'];
+    for (const campo of camposEndereco) {
+        if (!$(`[name="${campo}"]`).val().trim()) {
+            alert(`O campo ${campo.replace('_', ' ')} é obrigatório.`);
+            return false;
+        }
     }
 
     return true;

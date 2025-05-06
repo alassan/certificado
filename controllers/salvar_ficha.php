@@ -1,6 +1,6 @@
 <?php
 // arquivo: salvar_ficha.php
-require 'conexao.php';
+require_once __DIR__ . '/../config/conexao.php';
 
 $nome_aluno = $_POST['nome_aluno'] ?? '';
 $cpf = $_POST['cpf'] ?? '';

@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: login.php");
     exit;
@@ -43,7 +45,7 @@ $nivel = $_SESSION['usuario_nivel'];
   <p><strong>Nível de Acesso:</strong> <?= ucfirst(htmlspecialchars($nivel)) ?></p>
 
   <div class="text-center mt-4">
-    <a href="../dashboard/painel.php" class="btn btn-outline-primary">
+    <a href="index.php?page=dashboard/painel" class="btn btn-outline-primary">
       <i class="bi bi-arrow-left-circle me-1"></i> Voltar ao Painel
     </a>
   </div>

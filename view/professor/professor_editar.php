@@ -1,10 +1,13 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
-session_start();
-if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_nivel'], ['admin', 'funcionario'])) {
-    header("Location: ../index.php");
+
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: index.php?page=login/login");
     exit;
 }
+
+require_once __DIR__ . '/../../config/conexao.php';
+
 $id = $_GET['id'] ?? null;
 $stmt = $conn->prepare("SELECT * FROM professores WHERE id = ?");
 $stmt->execute([$id]);
@@ -15,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $telefone = $_POST['telefone'] ?? '';
     $stmt = $conn->prepare("UPDATE professores SET nome = ?, email = ?, telefone = ? WHERE id = ?");
     $stmt->execute([$nome, $email, $telefone, $id]);
-    header("Location: professor_listar.php");
+    header("Location: index.php?page=professor/professor_listar");
+
     exit;
 }
 ?>
@@ -27,12 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-light"><div class="container mt-5"><div class="card p-4">
   <h4 class="mb-3">Editar Professor</h4>
-  <form method="POST">
+  <form method="POST" action="index.php?page=professor/professor_editar&id=<?= $professor['id'] ?>">
     <input type="text" name="nome" value="<?= htmlspecialchars($professor['nome']) ?>" class="form-control mb-3" required>
     <input type="email" name="email" value="<?= htmlspecialchars($professor['email']) ?>" class="form-control mb-3" required>
     <input type="text" name="telefone" value="<?= htmlspecialchars($professor['telefone']) ?>" class="form-control mb-3" required>
     <button type="submit" class="btn btn-primary">Atualizar</button>
-    <a href="professor_listar.php" class="btn btn-secondary">Cancelar</a>
-  </form>
+    <a href="index.php?page=professor/professor_listar" class="btn btn-secondary">Cancelar</a>
+</form>
+
 </div></div></body>
 </html>

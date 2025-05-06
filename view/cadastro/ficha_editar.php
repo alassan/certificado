@@ -1,6 +1,6 @@
 <?php
 // arquivo: ficha_editar.php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 session_start();
 
 if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_nivel'], ['admin', 'Aluno'])) {

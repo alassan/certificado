@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../config/conexao.php';
 session_start();
 
 // Verifica se o usuário é Admin ou Funcionário

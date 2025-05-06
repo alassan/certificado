@@ -46,17 +46,25 @@ class Empresa {
     }
 
     // Listar empresas ativas
-    public function listar() {
-        try {
-            $sql = "SELECT * FROM empresas WHERE ativo = 1 ORDER BY nome";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Erro ao listar empresas: " . $e->getMessage());
-            return false;
+    public function listar($somenteAtivos = true) {
+    try {
+        $sql = "SELECT * FROM empresas";
+        if ($somenteAtivos) {
+            $sql .= " WHERE ativo = 1";
         }
+        $sql .= " ORDER BY nome";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Erro ao listar empresas: " . $e->getMessage());
+        return false;
     }
+}
+  public function listarAtivas() {
+    return $this->listar(true);
+}
+
 
     // Buscar empresa por ID
     public function buscarPorId($id) {
@@ -127,11 +135,18 @@ class Empresa {
         }
     }
 	
-	public function listarAtivas() {
+	/*public function listarAtivas() {
     $sql = "SELECT * FROM empresas WHERE ativo = 1 ORDER BY nome";
     $stmt = $this->conn->prepare($sql);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+}*/
+
+
+
+
+
+
+
 }
 ?>

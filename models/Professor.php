@@ -12,7 +12,7 @@ class Professor
     // ✅ LISTAR TODOS OS PROFESSORES
     public function listarTodos()
     {
-        $sql = "SELECT id, nome FROM professores ORDER BY nome ASC";
+        $sql = "SELECT id, nome, email, telefone FROM professores ORDER BY nome ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -28,19 +28,19 @@ class Professor
     }
 
     // ✅ CADASTRAR NOVO PROFESSOR
-    public function cadastrar($nome)
+    public function cadastrar($nome, $email, $telefone)
     {
-        $sql = "INSERT INTO professores (nome) VALUES (?)";
+        $sql = "INSERT INTO professores (nome, email, telefone) VALUES (?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([$nome]);
+        return $stmt->execute([$nome, $email, $telefone]);
     }
 
     // ✅ ATUALIZAR DADOS DO PROFESSOR
-    public function atualizar($id, $nome)
+    public function atualizar($id, $nome, $email, $telefone)
     {
-        $sql = "UPDATE professores SET nome = ? WHERE id = ?";
+        $sql = "UPDATE professores SET nome = ?, email = ?, telefone = ? WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([$nome, $id]);
+        return $stmt->execute([$nome, $email, $telefone, $id]);
     }
 
     // ✅ EXCLUIR PROFESSOR

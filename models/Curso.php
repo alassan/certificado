@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../config/conexao.php';
 
 class Curso 
 {
@@ -82,5 +82,11 @@ class Curso
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-	
+	public function buscarPorNome($nome)
+{
+    $stmt = $this->conn->prepare("SELECT * FROM cursos WHERE nome = ?");
+    $stmt->execute([$nome]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
 }

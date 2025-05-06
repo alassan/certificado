@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/conexao.php';
 
 class CursoController {
     public function meusCursos() {

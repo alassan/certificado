@@ -1,0 +1,12 @@
+DirectoryIndex index.php
+RewriteEngine On
+
+# Não redireciona arquivos ou diretórios existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Não redireciona para arquivos estáticos
+RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$ [NC]
+
+# Redireciona tudo para index.php
+RewriteRule ^ /certificado/index.php [L,QSA]

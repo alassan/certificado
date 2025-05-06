@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 $cursos = $conn->query("
     SELECT cursos.*, categorias.nome as categoria 
     FROM cursos 
@@ -11,7 +11,7 @@ include_once __DIR__ . '/../includes/header.php';
 <div class="container py-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="fw-bold"><i class="bi bi-journal-bookmark-fill me-2 text-success"></i>Lista de Cursos</h3>
-    <a href="curso_cadastrar.php" class="btn btn-success shadow-sm">
+    <a href="index.php?page=curso/curso_cadastrar" class="btn btn-success shadow-sm">
       <i class="bi bi-plus-circle me-1"></i> Novo Curso
     </a>
   </div>
@@ -44,7 +44,7 @@ include_once __DIR__ . '/../includes/header.php';
               <a href="curso_editar.php?id=<?= $curso['id'] ?>" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
                 <i class="bi bi-pencil-square"></i>
               </a>
-              <a href="curso_excluir.php?id=<?= $curso['id'] ?>" onclick="return confirm('Deseja excluir este curso?')" class="btn btn-sm btn-outline-danger" title="Excluir">
+              <a href="index.php?page=curso/curso_excluir&id=<?= $curso['id'] ?>" onclick="return confirm('Deseja excluir este curso?')" class="btn btn-sm btn-outline-danger" title="Excluir">
                 <i class="bi bi-trash3"></i>
               </a>
             </td>
@@ -53,6 +53,11 @@ include_once __DIR__ . '/../includes/header.php';
       </tbody>
     </table>
   </div>
+  <div class="text-center mt-4">
+      <a href="index.php?page=dashboard/painel" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Painel
+      </a>
+    </div>
 </div>
 
 <?php include_once __DIR__ . '/../includes/footer.php'; ?>

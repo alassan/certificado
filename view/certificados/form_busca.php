@@ -1,6 +1,6 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
-require_once __DIR__ . '/../../conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../models/Certificado.php';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/menu.php';

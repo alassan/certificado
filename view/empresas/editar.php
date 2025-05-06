@@ -1,4 +1,24 @@
-<?php 
+<?php
+require_once __DIR__ . '/../../models/conexao.php';
+require_once __DIR__ . '/../../models/Empresa.php';
+
+$conn = Conexao::getConnection();
+$model = new Empresa($conn);
+
+// Verifica se ID foi passado e busca a empresa
+$id = $_GET['id'] ?? null;
+
+if ($id) {
+    $empresa = $model->buscarPorId($id);
+}
+
+if (!isset($empresa) || !$empresa) {
+    echo '<div class="container mt-5"><div class="alert alert-danger">Empresa não encontrada.</div></div>';
+    require_once __DIR__ . '/../includes/footer.php';
+    exit;
+}
+
+
 require_once __DIR__ . '/../includes/header.php';
 
 $mensagemSucesso = $_SESSION['mensagem_sucesso'] ?? null;
@@ -77,9 +97,10 @@ unset($_SESSION['mensagem_erro']);
                         </div>
                         
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                            <a href="../../controllers/EmpresaController.php?action=listar" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Voltar
-                            </a>
+                            <a href="index.php?page=empresas/listar" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Voltar
+</a>
+
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i> Salvar Alterações
                             </button>

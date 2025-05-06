@@ -1,6 +1,8 @@
 <?php
-require_once __DIR__ . '/../../conexao.php';
-session_start();
+require_once __DIR__ . '/../../config/conexao.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     echo "<div class='alert alert-danger text-center'>ID de inscrição inválido.</div>";
