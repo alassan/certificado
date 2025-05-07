@@ -1,5 +1,4 @@
 <?php
-
 class Empresa {
     private $conn;
 
@@ -22,18 +21,18 @@ class Empresa {
             }
 
             $sql = "INSERT INTO empresas 
-                    (nome, cnpj, endereco, telefone, email, responsavel, data_cadastro, ativo) 
-                    VALUES (?, ?, ?, ?, ?, ?, NOW(), 1)";
+                    (nome, cnpj, endereco, telefone, email, responsavel, data_cadastro, ativo, logo_path) 
+                    VALUES (?, ?, ?, ?, ?, ?, NOW(), 1, ?)";
             
             $stmt = $this->conn->prepare($sql);
-
             return $stmt->execute([
                 $dados['nome'],
                 $cnpj,
                 $dados['endereco'],
                 $dados['telefone'],
                 $dados['email'],
-                $dados['responsavel']
+                $dados['responsavel'],
+                $dados['logo_path'] ?? null
             ]);
 
         } catch (PDOException $e) {
@@ -45,28 +44,65 @@ class Empresa {
         }
     }
 
-    // Listar empresas ativas
-    public function listar($somenteAtivos = true) {
-    try {
-        $sql = "SELECT * FROM empresas";
-        if ($somenteAtivos) {
-            $sql .= " WHERE ativo = 1";
+    // Atualizar empresa
+    public function atualizar($id, $dados) {
+        try {
+            $campos = [
+                'nome = ?',
+                'cnpj = ?',
+                'endereco = ?',
+                'telefone = ?',
+                'email = ?',
+                'responsavel = ?',
+                'ativo = ?'
+            ];
+            $params = [
+                $dados['nome'],
+                preg_replace('/[^0-9]/', '', $dados['cnpj']),
+                $dados['endereco'],
+                $dados['telefone'],
+                $dados['email'],
+                $dados['responsavel'],
+                $dados['ativo'] ?? 1
+            ];
+
+            if (!empty($dados['logo_path'])) {
+                $campos[] = 'logo_path = ?';
+                $params[] = $dados['logo_path'];
+            }
+
+            $params[] = $id;
+
+            $sql = "UPDATE empresas SET " . implode(', ', $campos) . " WHERE id = ?";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute($params);
+
+        } catch (PDOException $e) {
+            error_log("Erro ao atualizar empresa: " . $e->getMessage());
+            return false;
         }
-        $sql .= " ORDER BY nome";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Erro ao listar empresas: " . $e->getMessage());
-        return false;
     }
-}
-  public function listarAtivas() {
-    return $this->listar(true);
-}
 
+    public function listar($somenteAtivos = true) {
+        try {
+            $sql = "SELECT * FROM empresas";
+            if ($somenteAtivos) {
+                $sql .= " WHERE ativo = 1";
+            }
+            $sql .= " ORDER BY nome";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Erro ao listar empresas: " . $e->getMessage());
+            return false;
+        }
+    }
 
-    // Buscar empresa por ID
+    public function listarAtivas() {
+        return $this->listar(true);
+    }
+
     public function buscarPorId($id) {
         try {
             $sql = "SELECT * FROM empresas WHERE id = ?";
@@ -79,37 +115,6 @@ class Empresa {
         }
     }
 
-    // Atualizar empresa
-    public function atualizar($id, $dados) {
-        try {
-            $sql = "UPDATE empresas SET 
-                        nome = ?, 
-                        cnpj = ?, 
-                        endereco = ?, 
-                        telefone = ?, 
-                        email = ?, 
-                        responsavel = ?, 
-                        ativo = ?
-                    WHERE id = ?";
-            
-            $stmt = $this->conn->prepare($sql);
-            return $stmt->execute([
-                $dados['nome'],
-                preg_replace('/[^0-9]/', '', $dados['cnpj']),
-                $dados['endereco'],
-                $dados['telefone'],
-                $dados['email'],
-                $dados['responsavel'],
-                $dados['ativo'] ?? 1,
-                $id
-            ]);
-        } catch (PDOException $e) {
-            error_log("Erro ao atualizar empresa: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    // Exclusão lógica
     public function excluir($id) {
         try {
             $sql = "UPDATE empresas SET ativo = 0 WHERE id = ?";
@@ -121,7 +126,6 @@ class Empresa {
         }
     }
 
-    // Buscar empresa por CNPJ (sem máscara)
     public function buscarPorCNPJ($cnpj) {
         try {
             $cnpj = preg_replace('/[^0-9]/', '', $cnpj);
@@ -134,19 +138,6 @@ class Empresa {
             return false;
         }
     }
-	
-	/*public function listarAtivas() {
-    $sql = "SELECT * FROM empresas WHERE ativo = 1 ORDER BY nome";
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}*/
-
-
-
-
-
-
-
 }
+
 ?>

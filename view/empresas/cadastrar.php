@@ -1,12 +1,10 @@
 <?php 
 require_once __DIR__ . '/../includes/header.php';
 
-// Recupera mensagens e dados do formulário
 $mensagemSucesso = $_SESSION['mensagem_sucesso'] ?? null;
 $mensagemErro = $_SESSION['mensagem_erro'] ?? null;
 $dadosFormulario = $_SESSION['dados_formulario'] ?? [];
 
-// Limpa as mensagens da sessão
 unset($_SESSION['mensagem_sucesso'], $_SESSION['mensagem_erro'], $_SESSION['dados_formulario']);
 ?>
 
@@ -31,8 +29,8 @@ unset($_SESSION['mensagem_sucesso'], $_SESSION['mensagem_erro'], $_SESSION['dado
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     <?php endif; ?>
-                    
-                    <form action="/certificado/controllers/EmpresaController.php?acao=cadastrar" method="POST">
+
+                    <form action="/certificado/controllers/EmpresaController.php?acao=cadastrar" method="POST" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="nome" class="form-label">Nome da Empresa *</label>
@@ -68,17 +66,21 @@ unset($_SESSION['mensagem_sucesso'], $_SESSION['mensagem_erro'], $_SESSION['dado
                                 <label for="endereco" class="form-label">Endereço</label>
                                 <textarea class="form-control" id="endereco" name="endereco" rows="2"><?= htmlspecialchars($dadosFormulario['endereco'] ?? '') ?></textarea>
                             </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label for="logo" class="form-label">Logo da Empresa (PNG, JPG)</label>
+                                <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-    <a href="index.php?page=empresas/listar" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> Voltar
-    </a>
-    <button type="submit" class="btn btn-primary">
-        <i class="bi bi-save"></i> Salvar Empresa
-    </button>
-</div>
-
+                            <a href="index.php?page=empresas/listar" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Salvar Empresa
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -86,11 +88,9 @@ unset($_SESSION['mensagem_sucesso'], $_SESSION['mensagem_erro'], $_SESSION['dado
     </div>
 </div>
 
-<!-- ✅ jQuery e jQuery Mask Plugin -->
+<!-- jQuery e jQuery Mask Plugin -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-
-<!-- ✅ Aplicar máscaras -->
 <script>
 $(document).ready(function() {
     $('.cnpj').mask('00.000.000/0000-00', {

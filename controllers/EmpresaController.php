@@ -4,7 +4,6 @@ require_once __DIR__ . '/../models/Empresa.php';
 
 session_start();
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 class EmpresaController {
@@ -29,6 +28,7 @@ class EmpresaController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $dados = $this->sanitizarDados($_POST);
+                $dados['logo_path'] = $this->salvarLogoUpload();
 
                 if ($this->empresaModel->cadastrar($dados)) {
                     $_SESSION['mensagem_sucesso'] = 'Empresa cadastrada com sucesso!';
@@ -51,12 +51,18 @@ class EmpresaController {
     public function editar($id) {
         try {
             $empresa = $this->empresaModel->buscarPorId($id);
-            if (!$empresa) {
-                throw new Exception('Empresa não encontrada');
-            }
+            if (!$empresa) throw new Exception('Empresa não encontrada');
 
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dados = $this->sanitizarDados($_POST);
+
+                $novaLogo = $this->salvarLogoUpload();
+                if ($novaLogo) {
+                    $dados['logo_path'] = $novaLogo;
+                } else {
+                    $dados['logo_path'] = $empresa['logo_path']; // mantém a anterior
+                }
+
                 if ($this->empresaModel->atualizar($id, $dados)) {
                     $_SESSION['mensagem_sucesso'] = 'Empresa atualizada com sucesso!';
                     header('Location: /certificado/index.php?page=empresa/empresa_listar');
@@ -92,10 +98,7 @@ class EmpresaController {
     public function visualizar($id) {
         try {
             $empresa = $this->empresaModel->buscarPorId($id);
-            if (!$empresa) {
-                throw new Exception('Empresa não encontrada.');
-            }
-
+            if (!$empresa) throw new Exception('Empresa não encontrada.');
             require_once __DIR__ . '/../view/empresas/empresa_visualizar.php';
         } catch (Exception $e) {
             $_SESSION['mensagem_erro'] = $e->getMessage();
@@ -106,13 +109,33 @@ class EmpresaController {
 
     private function sanitizarDados($dados) {
         return [
-            'nome' => trim($dados['nome']),
-            'cnpj' => preg_replace('/[^0-9]/', '', $dados['cnpj']),
-            'endereco' => trim($dados['endereco']),
-            'telefone' => trim($dados['telefone']),
-            'email' => filter_var(trim($dados['email']), FILTER_SANITIZE_EMAIL),
-            'responsavel' => trim($dados['responsavel']),
+            'nome'        => trim($dados['nome']),
+            'cnpj'        => preg_replace('/[^0-9]/', '', $dados['cnpj']),
+            'endereco'    => trim($dados['endereco']),
+            'telefone'    => trim($dados['telefone']),
+            'email'       => filter_var(trim($dados['email']), FILTER_SANITIZE_EMAIL),
+            'responsavel' => trim($dados['responsavel'])
         ];
+    }
+
+    private function salvarLogoUpload(): ?string {
+        if (!isset($_FILES['logo']) || $_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+        $nomeFinal = 'uploads/logos/' . uniqid('logo_') . '.' . $ext;
+
+        $caminhoAbsoluto = __DIR__ . '/../' . $nomeFinal;
+        if (!is_dir(dirname($caminhoAbsoluto))) {
+            mkdir(dirname($caminhoAbsoluto), 0777, true);
+        }
+
+        if (move_uploaded_file($_FILES['logo']['tmp_name'], $caminhoAbsoluto)) {
+            return $nomeFinal;
+        }
+
+        return null;
     }
 }
 
@@ -122,35 +145,18 @@ $acao = $_GET['acao'] ?? '';
 
 switch ($acao) {
     case 'listar':
-        $controller->listar();
-        break;
-
+        $controller->listar(); break;
     case 'cadastrar':
-        $controller->cadastrar();
-        break;
-
+        $controller->cadastrar(); break;
     case 'editar':
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            $controller->editar($id);
-        }
+        if (!empty($_GET['id'])) $controller->editar((int) $_GET['id']);
         break;
-
     case 'excluir':
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            $controller->excluir($id);
-        }
+        if (!empty($_GET['id'])) $controller->excluir((int) $_GET['id']);
         break;
-
     case 'visualizar':
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            $controller->visualizar($id);
-        }
+        if (!empty($_GET['id'])) $controller->visualizar((int) $_GET['id']);
         break;
-
     default:
-        echo "Ação não reconhecida.";
-        break;
+        echo "Ação não reconhecida."; break;
 }

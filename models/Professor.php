@@ -12,7 +12,7 @@ class Professor
     // ✅ LISTAR TODOS OS PROFESSORES
     public function listarTodos()
     {
-        $sql = "SELECT id, nome, email, telefone FROM professores ORDER BY nome ASC";
+        $sql = "SELECT id, nome, email, telefone, assinatura_path FROM professores ORDER BY nome ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -28,19 +28,25 @@ class Professor
     }
 
     // ✅ CADASTRAR NOVO PROFESSOR
-    public function cadastrar($nome, $email, $telefone)
+    public function cadastrar($nome, $email, $telefone, $assinaturaPath = null)
     {
-        $sql = "INSERT INTO professores (nome, email, telefone) VALUES (?, ?, ?)";
+        $sql = "INSERT INTO professores (nome, email, telefone, assinatura_path) VALUES (?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([$nome, $email, $telefone]);
+        return $stmt->execute([$nome, $email, $telefone, $assinaturaPath]);
     }
 
     // ✅ ATUALIZAR DADOS DO PROFESSOR
-    public function atualizar($id, $nome, $email, $telefone)
+    public function atualizar($id, $nome, $email, $telefone, $assinaturaPath = null)
     {
-        $sql = "UPDATE professores SET nome = ?, email = ?, telefone = ? WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([$nome, $email, $telefone, $id]);
+        if ($assinaturaPath) {
+            $sql = "UPDATE professores SET nome = ?, email = ?, telefone = ?, assinatura_path = ? WHERE id = ?";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute([$nome, $email, $telefone, $assinaturaPath, $id]);
+        } else {
+            $sql = "UPDATE professores SET nome = ?, email = ?, telefone = ? WHERE id = ?";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute([$nome, $email, $telefone, $id]);
+        }
     }
 
     // ✅ EXCLUIR PROFESSOR
